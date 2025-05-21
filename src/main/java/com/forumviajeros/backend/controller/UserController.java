@@ -6,6 +6,7 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +54,15 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @GetMapping("/me")
+    @Operation(summary = "Obtener usuario actual", description = "Devuelve los datos del usuario autenticado")
+    @ApiResponse(responseCode = "200", description = "Usuario actual obtenido")
+    public ResponseEntity<UserResponseDTO> getCurrentUser(Authentication authentication) {
+        String username = authentication.getName();
+        UserResponseDTO user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Crear nuevo usuario", description = "Crea un nuevo usuario en el sistema")
@@ -62,7 +72,6 @@ public class UserController {
             @Valid @RequestBody UserRequestDTO userDTO,
             @RequestParam(required = false) List<String> roles) {
 
-        // Si roles vienen vacíos, asigna un rol por defecto (por ejemplo "USER")
         if (roles == null || roles.isEmpty()) {
             roles = List.of("USER");
         }
@@ -92,7 +101,6 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    // Método para cambiar la contraseña - ejemplo de endpoint adicional
     @PutMapping("/{id}/change-password")
     @Operation(summary = "Cambiar contraseña", description = "Permite cambiar la contraseña de un usuario")
     @ApiResponse(responseCode = "200", description = "Contraseña cambiada con éxito")

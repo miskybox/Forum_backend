@@ -86,7 +86,6 @@ public class BackendApplication {
 						.password(encoder.encode(dotenv.get("USER_PASSWORD")))
 						.build();
 
-				// Añadir roles después de construir el usuario
 				user.getRoles().add(userRole);
 				userRepository.save(user);
 				System.out.println("Usuario normal creado: " + dotenv.get("USER_USERNAME"));

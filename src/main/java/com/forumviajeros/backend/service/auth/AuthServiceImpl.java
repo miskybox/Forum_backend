@@ -1,18 +1,24 @@
 package com.forumviajeros.backend.service.auth;
 
+import java.util.HashSet;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.forumviajeros.backend.dto.auth.AuthRequestDTO;
 import com.forumviajeros.backend.dto.auth.AuthResponseDTO;
 import com.forumviajeros.backend.dto.user.UserRegisterDTO;
 import com.forumviajeros.backend.dto.user.UserResponseDTO;
+import com.forumviajeros.backend.exception.BadRequestException;
+import com.forumviajeros.backend.model.Role;
 import com.forumviajeros.backend.model.User;
+import com.forumviajeros.backend.repository.RoleRepository;
 import com.forumviajeros.backend.repository.UserRepository;
-import com.forumviajeros.backend.security.constants.SecurityConstants;
 import com.forumviajeros.backend.service.token.RefreshTokenService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,101 +29,129 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
 
     @Override
+    @Transactional
     public UserResponseDTO register(UserRegisterDTO dto) {
-        // Validar si usuario ya existe
-        Optional<User> existingUser = userRepository.findByUsername(dto.getUsername());
-        if (existingUser.isPresent()) {
-            throw new RuntimeException("El usuario ya existe");
+        logger.info("Iniciando registro para usuario: {}", dto.getUsername());
+
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            logger.warn("Intento de registro con nombre de usuario existente: {}", dto.getUsername());
+            throw new BadRequestException("El nombre de usuario ya está en uso");
         }
 
-        // Crear nuevo usuario y cifrar contraseña
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            logger.warn("Intento de registro con email existente: {}", dto.getEmail());
+            throw new BadRequestException("El correo electrónico ya está registrado");
+        }
+
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
 
+        if (user.getRoles() == null) {
+            user.setRoles(new HashSet<>());
+        }
+
+        try {
+            Optional<Role> userRoleOpt = roleRepository.findByName("ROLE_USER");
+
+            if (userRoleOpt.isPresent()) {
+                user.getRoles().add(userRoleOpt.get());
+                logger.info("Rol ROLE_USER asignado al usuario: {}", dto.getUsername());
+
+                logger.warn("Rol ROLE_USER no encontrado. Creando rol...");
+                Role newUserRole = new Role();
+                newUserRole.setName("ROLE_USER");
+                Role savedRole = roleRepository.save(newUserRole);
+
+                user.getRoles().add(savedRole);
+                logger.info("Nuevo rol ROLE_USER creado y asignado al usuario: {}", dto.getUsername());
+            }
+        } catch (Exception e) {
+            logger.error("Error al asignar rol al usuario: {}", e.getMessage(), e);
+
+        }
+
+        logger.info("Guardando nuevo usuario: {}", dto.getUsername());
         User savedUser = userRepository.save(user);
 
-        // Mapear a DTO de respuesta (sin password)
         UserResponseDTO response = new UserResponseDTO();
         response.setId(savedUser.getId());
-        response.setUsername(savedUser.getUsername());
+        response.setUsername(String.valueOf(savedUser.getUsername()));
         response.setEmail(savedUser.getEmail());
 
+        logger.info("Usuario registrado exitosamente: {}", dto.getUsername());
         return response;
     }
 
     @Override
     public AuthResponseDTO login(AuthRequestDTO dto) {
-        // Buscar usuario por username (podría ser email o username)
-        Optional<User> optionalUser = userRepository.findByUsername(dto.getUsername());
+        logger.info("Iniciando proceso de login para: {}", dto.getUsername());
 
-        // Si no se encuentra, intentar buscar por email si parece un email
+        Optional<User> optionalUser = userRepository.findByUsername(dto.getUsername());
         if (optionalUser.isEmpty() && dto.getUsername().contains("@")) {
             optionalUser = userRepository.findByEmail(dto.getUsername());
         }
 
-        if (optionalUser.isEmpty() ||
-                !passwordEncoder.matches(dto.getPassword(), optionalUser.get().getPassword())) {
+        if (optionalUser.isEmpty() || !passwordEncoder.matches(dto.getPassword(), optionalUser.get().getPassword())) {
             throw new BadCredentialsException("Credenciales inválidas");
         }
 
         User user = optionalUser.get();
 
-        // Generar access token
         String accessToken = refreshTokenService.generateAccessToken(user.getUsername());
-
-        // Generar refresh token
         String refreshToken = refreshTokenService.generateRefreshToken(user.getUsername());
 
+        logger.debug("Tokens generados para usuario: '{}'", user.getUsername());
+
         return AuthResponseDTO.builder()
-                .accessToken(SecurityConstants.TOKEN_PREFIX + accessToken)
+                .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
     }
 
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response) {
-        // Obtener el refresh token del request
         String refreshToken = refreshTokenService.extractRefreshTokenFromRequest(request);
 
         if (refreshToken != null) {
-            // Invalidar el refresh token
             refreshTokenService.removeToken(refreshToken);
+            logger.info("Sesión cerrada y token eliminado");
         }
     }
 
     @Override
     public AuthResponseDTO refreshToken(String refreshToken) {
-        // Verificar si el refresh token existe en nuestro almacén
         String username = refreshTokenService.getUsernameFromToken(refreshToken);
 
         if (username == null) {
+            logger.warn("Intento de refresh con token inválido");
             throw new BadCredentialsException("Refresh token inválido o expirado");
         }
 
-        // Opcional: verificar si el usuario sigue existiendo y está activo
         Optional<User> optionalUser = userRepository.findByUsername(username);
         if (optionalUser.isEmpty()) {
-            // Si el usuario ya no existe, invalidar su refresh token
             refreshTokenService.removeToken(refreshToken);
+            logger.warn("Usuario no encontrado durante refresh de token: '{}'", username);
             throw new BadCredentialsException("Usuario no encontrado");
         }
 
-        // Generar nuevo access token
         String newAccessToken = refreshTokenService.generateAccessToken(username);
-
-        // Opcionalmente, generar un nuevo refresh token y invalidar el anterior
         refreshTokenService.removeToken(refreshToken);
         String newRefreshToken = refreshTokenService.generateRefreshToken(username);
 
+        logger.debug("Tokens renovados para: '{}'", username);
+
         return AuthResponseDTO.builder()
-                .accessToken(SecurityConstants.TOKEN_PREFIX + newAccessToken)
+                .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
     }

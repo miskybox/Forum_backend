@@ -1,7 +1,5 @@
 package com.forumviajeros.backend.security.manager;
 
-import java.util.stream.Collectors;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -44,6 +42,6 @@ public class CustomAuthenticationManager implements AuthenticationManager {
                 user.getPassword(),
                 user.getRoles().stream()
                         .map(role -> new SimpleGrantedAuthority(role.getName()))
-                        .collect(Collectors.toList()));
+                        .toList());
     }
 }

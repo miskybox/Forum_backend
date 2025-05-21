@@ -22,6 +22,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+class LoginRequest {
+    private String username;
+    private String password;
+}
+
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
@@ -32,7 +40,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
-        setFilterProcessesUrl("/api/auth/login"); // Endpoint login
+        setFilterProcessesUrl("/api/auth/login");
     }
 
     @Override
@@ -41,7 +49,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         try {
             LoginRequest credentials = objectMapper.readValue(request.getInputStream(), LoginRequest.class);
 
-            // Crear el token de autenticación (podría ser username o email)
             UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                     credentials.getUsername(), credentials.getPassword());
 
@@ -57,16 +64,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         String username = authResult.getName();
 
-        // Generar access token utilizando RefreshTokenService
         String accessToken = refreshTokenService.generateAccessToken(username);
-
-        // Generar refresh token utilizando RefreshTokenService
         String refreshToken = refreshTokenService.generateRefreshToken(username);
 
         response.addHeader(SecurityConstants.HEADER_STRING, SecurityConstants.TOKEN_PREFIX + accessToken);
 
         Map<String, String> tokenMap = new HashMap<>();
-        tokenMap.put("accessToken", SecurityConstants.TOKEN_PREFIX + accessToken);
+        tokenMap.put("accessToken", accessToken);
         tokenMap.put("refreshToken", refreshToken);
         tokenMap.put("username", username);
 
@@ -74,11 +78,4 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.getWriter().write(objectMapper.writeValueAsString(tokenMap));
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    private static class LoginRequest {
-        private String username;
-        private String password;
-    }
 }
