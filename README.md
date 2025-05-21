@@ -2,7 +2,8 @@
 
 Backend de la plataforma **ForumViajeros**, una aplicación que permite a los usuarios compartir experiencias de viaje organizadas por regiones del mundo. Este backend está desarrollado en **Java con Spring Boot**, y utiliza **PostgreSQL** como base de datos.
 
----
+![Logo de ForumViajeros](./assets/logo.png)
+
 
 ## 1. 📌 Briefing del Proyecto
 
