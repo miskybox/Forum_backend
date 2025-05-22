@@ -37,6 +37,28 @@ public class AuthServiceImpl implements AuthService {
     private final RefreshTokenService refreshTokenService;
 
     @Override
+    public AuthResponseDTO login(AuthRequestDTO authRequestDTO) {
+        logger.info("Intentando iniciar sesión para usuario: {}", authRequestDTO.getUsername());
+        Optional<User> userOpt = userRepository.findByUsername(authRequestDTO.getUsername());
+        if (userOpt.isEmpty()) {
+            logger.warn("Usuario no encontrado: {}", authRequestDTO.getUsername());
+            throw new BadCredentialsException("Usuario o contraseña incorrectos");
+        }
+        User user = userOpt.get();
+        if (!passwordEncoder.matches(authRequestDTO.getPassword(), user.getPassword())) {
+            logger.warn("Contraseña incorrecta para usuario: {}", authRequestDTO.getUsername());
+            throw new BadCredentialsException("Usuario o contraseña incorrectos");
+        }
+        String accessToken = refreshTokenService.generateAccessToken(user.getUsername());
+        String refreshToken = refreshTokenService.generateRefreshToken(user.getUsername());
+        logger.info("Inicio de sesión exitoso para usuario: {}", authRequestDTO.getUsername());
+        return AuthResponseDTO.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    @Override
     @Transactional
     public UserResponseDTO register(UserRegisterDTO dto) {
         logger.info("Iniciando registro para usuario: {}", dto.getUsername());
@@ -55,10 +77,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        if (user.getRoles() == null) {
-            user.setRoles(new HashSet<>());
-        }
+        user.setRoles(new HashSet<>());
 
         try {
             Optional<Role> userRoleOpt = roleRepository.findByName("ROLE_USER");
@@ -66,7 +85,7 @@ public class AuthServiceImpl implements AuthService {
             if (userRoleOpt.isPresent()) {
                 user.getRoles().add(userRoleOpt.get());
                 logger.info("Rol ROLE_USER asignado al usuario: {}", dto.getUsername());
-
+            } else {
                 logger.warn("Rol ROLE_USER no encontrado. Creando rol...");
                 Role newUserRole = new Role();
                 newUserRole.setName("ROLE_USER");
@@ -77,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
             }
         } catch (Exception e) {
             logger.error("Error al asignar rol al usuario: {}", e.getMessage(), e);
-
+            throw new BadRequestException("Error interno al asignar el rol al usuario");
         }
 
         logger.info("Guardando nuevo usuario: {}", dto.getUsername());
@@ -85,37 +104,11 @@ public class AuthServiceImpl implements AuthService {
 
         UserResponseDTO response = new UserResponseDTO();
         response.setId(savedUser.getId());
-        response.setUsername(String.valueOf(savedUser.getUsername()));
+        response.setUsername(savedUser.getUsername());
         response.setEmail(savedUser.getEmail());
 
         logger.info("Usuario registrado exitosamente: {}", dto.getUsername());
         return response;
-    }
-
-    @Override
-    public AuthResponseDTO login(AuthRequestDTO dto) {
-        logger.info("Iniciando proceso de login para: {}", dto.getUsername());
-
-        Optional<User> optionalUser = userRepository.findByUsername(dto.getUsername());
-        if (optionalUser.isEmpty() && dto.getUsername().contains("@")) {
-            optionalUser = userRepository.findByEmail(dto.getUsername());
-        }
-
-        if (optionalUser.isEmpty() || !passwordEncoder.matches(dto.getPassword(), optionalUser.get().getPassword())) {
-            throw new BadCredentialsException("Credenciales inválidas");
-        }
-
-        User user = optionalUser.get();
-
-        String accessToken = refreshTokenService.generateAccessToken(user.getUsername());
-        String refreshToken = refreshTokenService.generateRefreshToken(user.getUsername());
-
-        logger.debug("Tokens generados para usuario: '{}'", user.getUsername());
-
-        return AuthResponseDTO.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
     }
 
     @Override
