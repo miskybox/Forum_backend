@@ -8,6 +8,8 @@ class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// This test is intentionally empty; it verifies that the Spring application
+		// context loads successfully.
+		// If the context fails to load, the test will fail automatically.
 	}
-
 }
