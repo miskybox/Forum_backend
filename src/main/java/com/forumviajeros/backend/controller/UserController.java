@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.forumviajeros.backend.dto.user.ChangePasswordRequestDTO;
 import com.forumviajeros.backend.dto.user.UserRequestDTO;
 import com.forumviajeros.backend.dto.user.UserResponseDTO;
 import com.forumviajeros.backend.service.user.UserService;
@@ -86,7 +87,9 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado", content = @Content)
     public ResponseEntity<UserResponseDTO> updateUser(
             @PathVariable Long id,
-            @Valid @RequestBody UserRequestDTO userDTO) {
+            @Valid @RequestBody UserRequestDTO userDTO,
+            Authentication authentication) {
+        assertCanManageUser(id, authentication);
         UserResponseDTO updatedUser = userService.updateUser(id, userDTO);
         return ResponseEntity.ok(updatedUser);
     }
@@ -107,9 +110,30 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "Usuario no encontrado", content = @Content)
     public ResponseEntity<UserResponseDTO> changePassword(
             @PathVariable Long id,
-            @RequestParam String currentPassword,
-            @RequestParam String newPassword) {
-        UserResponseDTO user = userService.changePassword(id, currentPassword, newPassword);
+            @Valid @RequestBody ChangePasswordRequestDTO request,
+            Authentication authentication) {
+        assertCanManageUser(id, authentication);
+        UserResponseDTO user = userService.changePassword(id, request.getCurrentPassword(), request.getNewPassword());
         return ResponseEntity.ok(user);
+    }
+
+    private void assertCanManageUser(Long userId, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            return;
+        }
+
+        String username = authentication.getName();
+        UserResponseDTO currentUser = userService.getUserByUsername(username);
+        if (!currentUser.getId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "No tienes permisos para modificar este usuario");
+        }
     }
 }

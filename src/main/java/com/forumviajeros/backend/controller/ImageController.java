@@ -1,6 +1,5 @@
 package com.forumviajeros.backend.controller;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,10 +25,15 @@ public class ImageController {
     @Operation(summary = "Obtener imagen por nombre de archivo", description = "Devuelve una imagen almacenada en el sistema")
     @ApiResponse(responseCode = "200", description = "Imagen encontrada con éxito")
     @ApiResponse(responseCode = "404", description = "Imagen no encontrada")
-    public ResponseEntity<String> getImage(@PathVariable String fileName) {
-        String imageDataUrl = localStorageService.getImage(fileName);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(imageDataUrl);
+    public ResponseEntity<byte[]> getImage(@PathVariable String fileName) {
+        try {
+            byte[] bytes = localStorageService.getRawBytes(fileName);
+            String mimeType = localStorageService.getMimeType(fileName);
+            return ResponseEntity.ok()
+                    .header("Content-Type", mimeType != null ? mimeType : "application/octet-stream")
+                    .body(bytes);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

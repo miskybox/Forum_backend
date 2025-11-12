@@ -14,7 +14,7 @@ import com.forumviajeros.backend.dto.forum.ForumResponseDTO;
 public interface ForumService {
     ForumResponseDTO createForum(ForumRequestDTO forumDTO, Long userId);
 
-    ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO);
+    ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO, Authentication authentication);
 
     ForumResponseDTO getForum(Long id);
 

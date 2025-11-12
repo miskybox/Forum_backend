@@ -1,14 +1,18 @@
 package com.forumviajeros.backend.service.token;
 
+import java.time.Instant;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.forumviajeros.backend.model.RefreshToken;
+import com.forumviajeros.backend.repository.RefreshTokenRepository;
 import com.forumviajeros.backend.security.constants.SecurityConstants;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,27 +20,71 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class RefreshTokenService {
 
-    private final Map<String, String> refreshTokenStore = new ConcurrentHashMap<>();
+    private static final long REFRESH_TOKEN_EXPIRATION = 30L * 24 * 60 * 60 * 1000;
 
-    private static final long REFRESH_TOKEN_EXPIRATION = 30 * 24 * 60 * 60 * 1000;
+    private final RefreshTokenRepository refreshTokenRepository;
 
+    public RefreshTokenService(RefreshTokenRepository refreshTokenRepository) {
+        this.refreshTokenRepository = refreshTokenRepository;
+    }
+
+    @Transactional
     public void saveToken(String refreshToken, String username) {
-        refreshTokenStore.put(refreshToken, username);
+        RefreshToken entity = new RefreshToken();
+        entity.setToken(refreshToken);
+        entity.setUsername(username);
+        entity.setExpiresAt(Instant.now().plusMillis(REFRESH_TOKEN_EXPIRATION));
+        refreshTokenRepository.save(entity);
     }
 
+    @Transactional
     public String getUsernameFromToken(String refreshToken) {
-        return refreshTokenStore.get(refreshToken);
+        try {
+            decode(refreshToken);
+        } catch (JWTVerificationException ex) {
+            removeToken(refreshToken);
+            return null;
+        }
+
+        return refreshTokenRepository.findByToken(refreshToken)
+                .filter(token -> {
+                    if (token.getExpiresAt().isBefore(Instant.now())) {
+                        refreshTokenRepository.delete(token);
+                        return false;
+                    }
+                    return true;
+                })
+                .map(RefreshToken::getUsername)
+                .orElse(null);
     }
 
+    @Transactional
     public void removeToken(String refreshToken) {
-        refreshTokenStore.remove(refreshToken);
+        refreshTokenRepository.findByToken(refreshToken).ifPresent(refreshTokenRepository::delete);
     }
 
+    @Transactional
     public boolean validateToken(String refreshToken) {
-        return refreshTokenStore.containsKey(refreshToken);
+        try {
+            decode(refreshToken);
+        } catch (JWTVerificationException ex) {
+            return false;
+        }
+
+        return refreshTokenRepository.findByToken(refreshToken)
+                .filter(token -> {
+                    if (token.getExpiresAt().isBefore(Instant.now())) {
+                        refreshTokenRepository.delete(token);
+                        return false;
+                    }
+                    return true;
+                })
+                .isPresent();
     }
 
+    @Transactional
     public String generateRefreshToken(String username) {
+        refreshTokenRepository.deleteByUsername(username);
         String tokenId = UUID.randomUUID().toString();
 
         String refreshToken = JWT.create()
@@ -45,7 +93,6 @@ public class RefreshTokenService {
                 .withExpiresAt(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
                 .sign(Algorithm.HMAC512(SecurityConstants.SECRET));
 
-        // Almacenar el token
         saveToken(refreshToken, username);
 
         return refreshToken;
@@ -66,5 +113,11 @@ public class RefreshTokenService {
         }
 
         return refreshToken;
+    }
+
+    private DecodedJWT decode(String refreshToken) {
+        return JWT.require(Algorithm.HMAC512(SecurityConstants.SECRET))
+                .build()
+                .verify(refreshToken);
     }
 }

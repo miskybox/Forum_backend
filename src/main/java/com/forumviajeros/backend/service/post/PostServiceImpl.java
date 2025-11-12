@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,7 @@ import com.forumviajeros.backend.repository.PostRepository;
 import com.forumviajeros.backend.repository.TagRepository;
 import com.forumviajeros.backend.repository.UserRepository;
 import com.forumviajeros.backend.service.storage.LocalStorageService;
+import com.forumviajeros.backend.util.HtmlSanitizer;
 
 @Service
 public class PostServiceImpl implements PostService {
@@ -51,16 +53,18 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponseDTO createPost(PostRequestDTO dto, Long userId) {
         Post post = new Post();
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
+        post.setTitle(HtmlSanitizer.stripAllTags(dto.getTitle()));
+        post.setContent(HtmlSanitizer.sanitizeRichText(dto.getContent()));
         post.setUser(userRepository.findById(userId).orElseThrow());
         post.setForum(forumRepository.findById(dto.getForumId()).orElseThrow());
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
 
-        if (dto.getTags() != null) {
-            List<Tag> tags = dto.getTags().stream().map(
-                    name -> tagRepository.findByName(name).orElseGet(
+        if (dto.getTags() != null && !dto.getTags().isEmpty()) {
+            List<Tag> tags = dto.getTags().stream()
+                    .map(tagName -> HtmlSanitizer.stripAllTags(tagName).trim())
+                    .filter(tagName -> !tagName.isEmpty())
+                    .map(name -> tagRepository.findByName(name).orElseGet(
                             () -> tagRepository.save(new Tag(null, name, new ArrayList<>(), new ArrayList<>()))))
                     .collect(Collectors.toList());
             post.setTags(tags);
@@ -72,15 +76,19 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponseDTO updatePost(Long id, PostRequestDTO dto) {
+    public PostResponseDTO updatePost(Long id, PostRequestDTO dto, Authentication authentication) {
         Post post = postRepository.findById(id).orElseThrow();
-        post.setTitle(dto.getTitle());
-        post.setContent(dto.getContent());
+        assertOwnershipOrAdmin(post, authentication);
+
+        post.setTitle(HtmlSanitizer.stripAllTags(dto.getTitle()));
+        post.setContent(HtmlSanitizer.sanitizeRichText(dto.getContent()));
         post.setUpdatedAt(LocalDateTime.now());
 
         if (dto.getTags() != null) {
-            List<Tag> tags = dto.getTags().stream().map(
-                    name -> tagRepository.findByName(name).orElseGet(
+            List<Tag> tags = dto.getTags().stream()
+                    .map(tagName -> HtmlSanitizer.stripAllTags(tagName).trim())
+                    .filter(tagName -> !tagName.isEmpty())
+                    .map(name -> tagRepository.findByName(name).orElseGet(
                             () -> tagRepository.save(new Tag(null, name, new ArrayList<>(), new ArrayList<>()))))
                     .collect(Collectors.toList());
             post.setTags(tags);
@@ -123,6 +131,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponseDTO addImages(Long postId, List<MultipartFile> files, Authentication authentication) {
         Post post = postRepository.findById(postId).orElseThrow();
+        assertOwnershipOrAdmin(post, authentication);
         localStorageService.saveImagesToPost(post, files, imageRepository);
         return mapToResponseDTO(post);
     }
@@ -130,6 +139,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponseDTO removeImage(Long postId, Long imageId, Authentication authentication) {
         Post post = postRepository.findById(postId).orElseThrow();
+        assertOwnershipOrAdmin(post, authentication);
         var image = imageRepository.findById(imageId).orElseThrow();
         if (!image.getPost().getId().equals(post.getId())) {
             throw new RuntimeException("Imagen no pertenece a esta publicación");
@@ -141,6 +151,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public void delete(Long id, Authentication authentication) {
         Post post = postRepository.findById(id).orElseThrow();
+        assertOwnershipOrAdmin(post, authentication);
         postRepository.delete(post);
     }
 
@@ -162,5 +173,27 @@ public class PostServiceImpl implements PostService {
         dto.setCreatedAt(post.getCreatedAt() != null ? post.getCreatedAt().toString() : null);
         dto.setUpdatedAt(post.getUpdatedAt() != null ? post.getUpdatedAt().toString() : null);
         return dto;
+    }
+
+    private void assertOwnershipOrAdmin(Post post, Authentication authentication) {
+        if (authentication == null) {
+            throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");
+        }
+
+        if (isAdmin(authentication)) {
+            return;
+        }
+
+        String username = authentication.getName();
+        if (!post.getUser().getUsername().equals(username)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "No tienes permisos para modificar esta publicación");
+        }
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
     }
 }

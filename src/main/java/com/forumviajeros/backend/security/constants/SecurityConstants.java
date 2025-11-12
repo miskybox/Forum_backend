@@ -12,9 +12,9 @@ public class SecurityConstants {
     // quitar este método al deployar
     private static String getSecretKey() {
         String secretKey = System.getenv("JWT_SECRET_KEY");
-        if (secretKey == null || secretKey.isEmpty()) {
-            // Solo para desarrollo, cambia en producción
-            return "i8Duq+Y15U9FQP6n6fD+2V+wEUa8FdNeHAwdNahdfQ8=";
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException(
+                    "La variable de entorno JWT_SECRET_KEY debe estar configurada antes de iniciar la aplicación");
         }
         return secretKey;
     }

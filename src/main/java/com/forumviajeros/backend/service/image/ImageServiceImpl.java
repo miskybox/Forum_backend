@@ -2,8 +2,10 @@ package com.forumviajeros.backend.service.image;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.forumviajeros.backend.model.Image;
@@ -29,8 +31,13 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public Image saveImage(MultipartFile file, Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(() -> new RuntimeException("Post no encontrado"));
-        String filename = storageService.store(file);
-        Image image = new Image(null, filename, null, null, null, post);
+        String storedFilename = storageService.store(file);
+        Image image = new Image();
+        image.setPost(post);
+        image.setFilePath(storedFilename);
+        image.setName(StringUtils.cleanPath(java.util.Objects.requireNonNull(file.getOriginalFilename())));
+        image.setType(file.getContentType());
+        image.setSize(file.getSize());
         return imageRepository.save(image);
     }
 

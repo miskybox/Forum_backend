@@ -16,6 +16,7 @@ import com.forumviajeros.backend.model.User;
 import com.forumviajeros.backend.repository.CommentRepository;
 import com.forumviajeros.backend.repository.PostRepository;
 import com.forumviajeros.backend.repository.UserRepository;
+import com.forumviajeros.backend.util.HtmlSanitizer;
 
 @Service
 public class CommentServiceImpl implements CommentService {
@@ -41,7 +42,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación", "id", postId));
 
         Comment comment = new Comment();
-        comment.setContent(commentRequestDTO.getContent());
+        comment.setContent(HtmlSanitizer.sanitizeRichText(commentRequestDTO.getContent()));
         comment.setUser(user);
         comment.setPost(post);
         comment.setStatus(Comment.CommentStatus.ACTIVE);
@@ -62,7 +63,7 @@ public class CommentServiceImpl implements CommentService {
             throw new AccessDeniedException("No tienes permisos para editar este comentario");
         }
 
-        comment.setContent(commentRequestDTO.getContent());
+        comment.setContent(HtmlSanitizer.sanitizeRichText(commentRequestDTO.getContent()));
         comment.setStatus(Comment.CommentStatus.EDITED);
 
         Comment updatedComment = commentRepository.save(comment);
@@ -127,7 +128,7 @@ public class CommentServiceImpl implements CommentService {
                 comment.getUser().getUsername(),
                 comment.getUser().getProfileImageUrl(),
                 comment.getStatus().name(),
-                comment.getCreatedAt().toString(),
-                comment.getUpdatedAt().toString());
+                comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null,
+                comment.getUpdatedAt() != null ? comment.getUpdatedAt().toString() : null);
     }
 }

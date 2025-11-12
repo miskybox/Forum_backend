@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -29,6 +30,10 @@ import com.forumviajeros.backend.repository.ImageRepository;
 public class LocalStorageService implements StorageService {
 
     private final Path rootLocation;
+    private static final Map<String, String> CONTENT_TYPE_EXTENSION = Map.of(
+            "image/jpeg", ".jpg",
+            "image/png", ".png",
+            "image/webp", ".webp");
 
     public LocalStorageService(@Value("${com.forumviajeros.upload-dir:uploads}") String uploadDir) {
         this.rootLocation = Paths.get(uploadDir);
@@ -50,14 +55,17 @@ public class LocalStorageService implements StorageService {
                 throw new StorageException("Failed to store empty file.");
             }
 
+            validateContentType(file);
+
             String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            String filename = UUID.randomUUID().toString() + extension;
+            String filename = UUID.randomUUID().toString() + resolveExtension(file, originalFilename);
 
             if (originalFilename.contains("..")) {
                 throw new StorageException(
                         "Cannot store file with relative path outside current directory " + originalFilename);
             }
+
+            Files.createDirectories(this.rootLocation);
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, this.rootLocation.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
@@ -146,6 +154,7 @@ public class LocalStorageService implements StorageService {
 
     public void saveImagesToPost(Post post, List<MultipartFile> files, ImageRepository imageRepository) {
         for (MultipartFile file : files) {
+            validateContentType(file);
             String filename = this.store(file);
             Image image = new Image();
             image.setPost(post);
@@ -155,5 +164,26 @@ public class LocalStorageService implements StorageService {
             image.setSize(file.getSize());
             imageRepository.save(image);
         }
+    }
+
+    private void validateContentType(MultipartFile file) {
+        String contentType = file.getContentType();
+        if (contentType == null || !CONTENT_TYPE_EXTENSION.containsKey(contentType)) {
+            throw new StorageException("Tipo de archivo no permitido: " + contentType);
+        }
+    }
+
+    private String resolveExtension(MultipartFile file, String originalFilename) {
+        String extension = StringUtils.getFilenameExtension(originalFilename);
+        if (StringUtils.hasText(extension)) {
+            return "." + extension;
+        }
+
+        String contentType = file.getContentType();
+        if (contentType != null && CONTENT_TYPE_EXTENSION.containsKey(contentType)) {
+            return CONTENT_TYPE_EXTENSION.get(contentType);
+        }
+
+        throw new StorageException("No se pudo determinar la extensión del archivo subido");
     }
 }

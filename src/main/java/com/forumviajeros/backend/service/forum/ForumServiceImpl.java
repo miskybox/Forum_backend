@@ -1,11 +1,14 @@
 package com.forumviajeros.backend.service.forum;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
@@ -50,7 +53,7 @@ public class ForumServiceImpl implements ForumService {
                 forum.setUser(userRepository.findById(userId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "id", userId)));
 
-                forum.setTags(tagRepository.findByNameIn(forumDTO.getTags()));
+        forum.setTags(tagRepository.findByNameIn(sanitizeTagNames(forumDTO.getTags())));
                 forum.setStatus(Forum.ForumStatus.ACTIVE);
                 forum.setCreatedAt(LocalDateTime.now());
                 forum.setUpdatedAt(LocalDateTime.now());
@@ -61,9 +64,11 @@ public class ForumServiceImpl implements ForumService {
 
         @Override
         @Transactional
-        public ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO) {
+        public ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO, Authentication authentication) {
                 Forum forum = forumRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Foro", "id", id));
+
+                assertOwnershipOrAdmin(forum, authentication);
 
                 forum.setTitle(HtmlSanitizer.stripAllTags(forumDTO.getTitle()));
                 forum.setDescription(HtmlSanitizer.sanitizeRichText(forumDTO.getDescription()));
@@ -72,7 +77,7 @@ public class ForumServiceImpl implements ForumService {
                                 .orElseThrow(() -> new ResourceNotFoundException("Categoría", "id",
                                                 forumDTO.getCategoryId())));
 
-                forum.setTags(tagRepository.findByNameIn(forumDTO.getTags()));
+                forum.setTags(tagRepository.findByNameIn(sanitizeTagNames(forumDTO.getTags())));
                 forum.setUpdatedAt(LocalDateTime.now());
 
                 Forum updatedForum = forumRepository.save(forum);
@@ -90,7 +95,7 @@ public class ForumServiceImpl implements ForumService {
         public List<ForumResponseDTO> getAllForums() {
                 return forumRepository.findAll().stream()
                                 .map(this::mapToResponseDTO)
-                                .toList();
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -114,7 +119,7 @@ public class ForumServiceImpl implements ForumService {
 
                 return forumRepository.findByCategory(category).stream()
                                 .map(this::mapToResponseDTO)
-                                .toList();
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -123,7 +128,7 @@ public class ForumServiceImpl implements ForumService {
 
                 return forumRepository.searchByKeyword(sanitizedKeyword, Pageable.unpaged()).stream()
                                 .map(this::mapToResponseDTO)
-                                .toList();
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -131,6 +136,7 @@ public class ForumServiceImpl implements ForumService {
         public void delete(Long id, Authentication authentication) {
                 Forum forum = forumRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Foro", "id", id));
+                assertOwnershipOrAdmin(forum, authentication);
                 forumRepository.delete(forum);
         }
 
@@ -143,7 +149,7 @@ public class ForumServiceImpl implements ForumService {
                                                                 username)))
                                 .stream()
                                 .map(this::mapToResponseDTO)
-                                .toList();
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -151,6 +157,8 @@ public class ForumServiceImpl implements ForumService {
         public ForumResponseDTO updateImage(Long id, MultipartFile file, Authentication authentication) {
                 Forum forum = forumRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Foro", "id", id));
+
+                assertOwnershipOrAdmin(forum, authentication);
 
                 // TODO: implementar subida real con LocalStorageService
                 forum.setUpdatedAt(LocalDateTime.now());
@@ -172,7 +180,7 @@ public class ForumServiceImpl implements ForumService {
                 response.setTitle(forum.getTitle());
                 response.setDescription(forum.getDescription());
                 response.setCategoryId(forum.getCategory().getId());
-                response.setTags(forum.getTags().stream().map(Tag::getName).toList());
+                response.setTags(forum.getTags().stream().map(Tag::getName).collect(Collectors.toList()));
                 response.setStatus(forum.getStatus().name());
                 response.setViewCount(forum.getViewCount());
                 response.setPostCount((long) forum.getPosts().size());
@@ -186,5 +194,39 @@ public class ForumServiceImpl implements ForumService {
                 return userRepository.findByUsername(username)
                                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username))
                                 .getId();
+        }
+
+        private void assertOwnershipOrAdmin(Forum forum, Authentication authentication) {
+                if (authentication == null) {
+                        throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");
+                }
+
+                if (isAdmin(authentication)) {
+                        return;
+                }
+
+                String username = authentication.getName();
+                if (!forum.getUser().getUsername().equals(username)) {
+                        throw new org.springframework.security.access.AccessDeniedException(
+                                        "No tienes permisos para modificar este foro");
+                }
+        }
+
+        private boolean isAdmin(Authentication authentication) {
+                return authentication.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+        }
+
+        private List<String> sanitizeTagNames(List<String> tags) {
+                if (tags == null) {
+                        return Collections.emptyList();
+                }
+
+                return tags.stream()
+                                .map(HtmlSanitizer::stripAllTags)
+                                .map(String::trim)
+                                .filter(tag -> !tag.isEmpty())
+                                .collect(Collectors.toList());
         }
 }

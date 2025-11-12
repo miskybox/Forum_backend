@@ -61,23 +61,20 @@ public class AuthServiceImpl implements AuthService {
         }
 
         try {
-            Optional<Role> userRoleOpt = roleRepository.findByName("ROLE_USER");
+            Role userRole = roleRepository.findByName("ROLE_USER")
+                    .orElseGet(() -> {
+                        logger.warn("Rol ROLE_USER no encontrado. Creando rol por defecto...");
+                        Role newUserRole = new Role();
+                        newUserRole.setName("ROLE_USER");
+                        newUserRole.setDescription("Rol por defecto para usuarios registrados");
+                        return roleRepository.save(newUserRole);
+                    });
 
-            if (userRoleOpt.isPresent()) {
-                user.getRoles().add(userRoleOpt.get());
-                logger.info("Rol ROLE_USER asignado al usuario: {}", dto.getUsername());
-
-                logger.warn("Rol ROLE_USER no encontrado. Creando rol...");
-                Role newUserRole = new Role();
-                newUserRole.setName("ROLE_USER");
-                Role savedRole = roleRepository.save(newUserRole);
-
-                user.getRoles().add(savedRole);
-                logger.info("Nuevo rol ROLE_USER creado y asignado al usuario: {}", dto.getUsername());
-            }
+            user.getRoles().add(userRole);
+            logger.info("Rol ROLE_USER asignado al usuario: {}", dto.getUsername());
         } catch (Exception e) {
             logger.error("Error al asignar rol al usuario: {}", e.getMessage(), e);
-
+            throw new BadRequestException("No se pudo asignar el rol por defecto al usuario");
         }
 
         logger.info("Guardando nuevo usuario: {}", dto.getUsername());

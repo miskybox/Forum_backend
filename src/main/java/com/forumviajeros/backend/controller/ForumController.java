@@ -85,7 +85,7 @@ public class ForumController {
     public ResponseEntity<ForumResponseDTO> updateForum(@PathVariable Long id,
             @Valid @RequestBody ForumRequestDTO forumDTO,
             Authentication authentication) {
-        return ResponseEntity.ok(forumService.updateForum(id, forumDTO));
+        return ResponseEntity.ok(forumService.updateForum(id, forumDTO, authentication));
     }
 
     @DeleteMapping("/{id}")

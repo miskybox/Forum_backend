@@ -61,7 +61,7 @@ public class PostController {
     public ResponseEntity<PostResponseDTO> updatePost(@PathVariable Long id,
             @Valid @RequestBody PostRequestDTO postDTO,
             Authentication authentication) {
-        return ResponseEntity.ok(postService.updatePost(id, postDTO));
+        return ResponseEntity.ok(postService.updatePost(id, postDTO, authentication));
     }
 
     @DeleteMapping("/{id}")
