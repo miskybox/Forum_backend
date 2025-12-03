@@ -3,6 +3,7 @@ package com.forumviajeros.backend;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -43,6 +44,7 @@ public class BackendApplication {
 	}
 
 	@Bean
+	@ConditionalOnProperty(name = "app.init.users.enabled", havingValue = "true", matchIfMissing = true)
 	public CommandLineRunner logEnvironment(Environment env) {
 		return args -> {
 			System.out.println("====== Environment Variables ======");
@@ -55,6 +57,7 @@ public class BackendApplication {
 	}
 
 	@Bean
+	@ConditionalOnProperty(name = "app.init.users.enabled", havingValue = "true", matchIfMissing = true)
 	public CommandLineRunner initUsers(UserRepository userRepository, RoleRepository roleRepository,
 			BCryptPasswordEncoder encoder) {
 		return args -> {
