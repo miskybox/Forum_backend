@@ -20,6 +20,7 @@ public class BackendApplication {
 
 	public static final String DB_URL = "DB_URL";
 	public static final String DB_USER = "DB_USER";
+	public static final String DB_PASSWORD = "DB_PASSWORD";
 	public static final String JWT_SECRET_KEY = "JWT_SECRET_KEY";
 
 	public static void main(String[] args) {
@@ -32,6 +33,7 @@ public class BackendApplication {
 
 		System.setProperty(DB_URL, dotenv.get(DB_URL, ""));
 		System.setProperty(DB_USER, dotenv.get(DB_USER, ""));
+		System.setProperty(DB_PASSWORD, dotenv.get(DB_PASSWORD, ""));
 		System.setProperty(JWT_SECRET_KEY, dotenv.get(JWT_SECRET_KEY, ""));
 		System.setProperty("spring.application.name", dotenv.get("SPRING_APPLICATION_NAME", "backend"));
 
