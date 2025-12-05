@@ -1,5 +1,7 @@
 package com.forumviajeros.backend.security.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,6 +15,7 @@ import com.forumviajeros.backend.repository.UserRepository;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
     private final UserRepository userRepository;
 
     public UserDetailsServiceImpl(UserRepository userRepository) {
@@ -25,8 +28,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        System.out.println("🛡️ Roles del usuario cargado: " + user.getRoles());
-        System.out.println("🟢 Usuario habilitado: " + user.isEnabled());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Roles del usuario cargado: {} - Usuario habilitado: {}", user.getRoles(), user.isEnabled());
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),

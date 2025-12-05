@@ -7,7 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -98,10 +102,11 @@ public class VisitedPlaceController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String direction) {
         Long userId = getUserId(userDetails);
+        int validatedSize = validatePageSize(size);
         Sort sort = direction.equalsIgnoreCase("asc") ? 
                 Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(visitedPlaceService.getUserPlacesPaginated(
-                userId, PageRequest.of(page, size, sort)));
+                userId, PageRequest.of(page, validatedSize, sort)));
     }
 
     @GetMapping("/my-places/status/{status}")
@@ -139,8 +144,17 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/users/{userId}/stats")
-    @Operation(summary = "Obtener estadísticas de un usuario")
-    public ResponseEntity<TravelStatsDTO> getUserStats(@PathVariable Long userId) {
+    @Operation(summary = "Obtener estadísticas de un usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<TravelStatsDTO> getUserStats(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long userId) {
+        Long currentUserId = getUserId(userDetails);
+        
+        // Solo puede ver sus propias estadísticas, a menos que sea ADMIN
+        if (!currentUserId.equals(userId) && !isAdmin()) {
+            throw new AccessDeniedException("No tienes permiso para ver las estadísticas de otro usuario");
+        }
+        
         return ResponseEntity.ok(visitedPlaceService.getUserTravelStats(userId));
     }
 
@@ -154,7 +168,8 @@ public class VisitedPlaceController {
     @Operation(summary = "Obtener ranking de viajeros")
     public ResponseEntity<List<TravelStatsDTO>> getTravelersRanking(
             @RequestParam(defaultValue = "10") int limit) {
-        return ResponseEntity.ok(visitedPlaceService.getTravelersRanking(limit));
+        int validatedLimit = validatePageSize(limit);
+        return ResponseEntity.ok(visitedPlaceService.getTravelersRanking(validatedLimit));
     }
 
     @GetMapping("/my-ranking")
@@ -181,6 +196,32 @@ public class VisitedPlaceController {
         return userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
                 .getId();
+    }
+
+    /**
+     * Verifica si el usuario actual tiene rol de ADMIN
+     */
+    private boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+    }
+
+    /**
+     * Valida y limita el tamaño de página a un máximo de 100
+     */
+    private int validatePageSize(int size) {
+        if (size < 1) {
+            return 10; // Tamaño mínimo
+        }
+        if (size > 100) {
+            return 100; // Tamaño máximo
+        }
+        return size;
     }
 }
 

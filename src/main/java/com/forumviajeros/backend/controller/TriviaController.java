@@ -4,7 +4,11 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -108,7 +112,8 @@ public class TriviaController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         Long userId = getUserId(userDetails);
-        return ResponseEntity.ok(triviaService.getUserGameHistory(userId, page, size));
+        int validatedSize = validatePageSize(size);
+        return ResponseEntity.ok(triviaService.getUserGameHistory(userId, page, validatedSize));
     }
 
     // === PUNTUACIONES ===
@@ -122,8 +127,17 @@ public class TriviaController {
     }
 
     @GetMapping("/users/{userId}/score")
-    @Operation(summary = "Obtener estadísticas de un usuario")
-    public ResponseEntity<TriviaScoreDTO> getUserScore(@PathVariable Long userId) {
+    @Operation(summary = "Obtener estadísticas de un usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<TriviaScoreDTO> getUserScore(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable Long userId) {
+        Long currentUserId = getUserId(userDetails);
+        
+        // Solo puede ver sus propias estadísticas, a menos que sea ADMIN
+        if (!currentUserId.equals(userId) && !isAdmin()) {
+            throw new AccessDeniedException("No tienes permiso para ver las estadísticas de otro usuario");
+        }
+        
         return ResponseEntity.ok(triviaService.getUserScore(userId));
     }
 
@@ -133,7 +147,8 @@ public class TriviaController {
             @RequestParam(defaultValue = "score") String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(triviaService.getLeaderboard(type, page, size));
+        int validatedSize = validatePageSize(size);
+        return ResponseEntity.ok(triviaService.getLeaderboard(type, page, validatedSize));
     }
 
     @GetMapping("/my-rank")
@@ -167,6 +182,32 @@ public class TriviaController {
         return userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"))
                 .getId();
+    }
+
+    /**
+     * Verifica si el usuario actual tiene rol de ADMIN
+     */
+    private boolean isAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+    }
+
+    /**
+     * Valida y limita el tamaño de página a un máximo de 100
+     */
+    private int validatePageSize(int size) {
+        if (size < 1) {
+            return 10; // Tamaño mínimo
+        }
+        if (size > 100) {
+            return 100; // Tamaño máximo
+        }
+        return size;
     }
 }
 

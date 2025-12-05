@@ -2,6 +2,8 @@ package com.forumviajeros.backend.security.filter;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +24,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthorizationFilter.class);
     private final UserDetailsService userDetailsService;
 
     public JwtAuthorizationFilter(UserDetailsService userDetailsService) {
@@ -49,8 +52,9 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                System.out.println("✅ Token válido para usuario: " + username);
-                System.out.println("🔐 Authorities: " + userDetails.getAuthorities());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Token válido para usuario: {} con autoridades: {}", username, userDetails.getAuthorities());
+                }
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
