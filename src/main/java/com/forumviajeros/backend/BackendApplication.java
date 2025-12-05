@@ -1,5 +1,7 @@
 package com.forumviajeros.backend;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,26 +20,36 @@ import io.github.cdimascio.dotenv.Dotenv;
 @SpringBootApplication
 public class BackendApplication {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(BackendApplication.class);
+
 	public static final String DB_URL = "DB_URL";
 	public static final String DB_USER = "DB_USER";
 	public static final String DB_PASSWORD = "DB_PASSWORD";
 	public static final String JWT_SECRET_KEY = "JWT_SECRET_KEY";
+	public static final String SPRING_APPLICATION_NAME = "SPRING_APPLICATION_NAME";
+	public static final String SPRING_PROFILES_ACTIVE = "SPRING_PROFILES_ACTIVE";
+	public static final String ADMIN_USERNAME_KEY = "ADMIN_USERNAME";
+	public static final String ADMIN_EMAIL_KEY = "ADMIN_EMAIL";
+	public static final String ADMIN_PASSWORD_KEY = "ADMIN_PASSWORD";
+	public static final String USER_USERNAME_KEY = "USER_USERNAME";
+	public static final String USER_EMAIL_KEY = "USER_EMAIL";
+	public static final String USER_PASSWORD_KEY = "USER_PASSWORD";
 
 	public static void main(String[] args) {
 
 		Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
 		if (dotenv.get(DB_URL) == null || dotenv.get(DB_USER) == null) {
-			System.err.println("⚠️ Variables de entorno esenciales no están definidas correctamente.");
+			LOGGER.warn("Essential environment variables are not defined correctly.");
 		}
 
 		System.setProperty(DB_URL, dotenv.get(DB_URL, ""));
 		System.setProperty(DB_USER, dotenv.get(DB_USER, ""));
 		System.setProperty(DB_PASSWORD, dotenv.get(DB_PASSWORD, ""));
 		System.setProperty(JWT_SECRET_KEY, dotenv.get(JWT_SECRET_KEY, ""));
-		System.setProperty("spring.application.name", dotenv.get("SPRING_APPLICATION_NAME", "backend"));
+		System.setProperty("spring.application.name", dotenv.get(SPRING_APPLICATION_NAME, "backend"));
 
-		String activeProfile = dotenv.get("SPRING_PROFILES_ACTIVE");
+		String activeProfile = dotenv.get(SPRING_PROFILES_ACTIVE);
 		if (activeProfile != null && !activeProfile.isBlank()) {
 			System.setProperty("spring.profiles.active", activeProfile);
 		}
@@ -49,12 +61,11 @@ public class BackendApplication {
 	@ConditionalOnProperty(name = "app.init.users.enabled", havingValue = "true", matchIfMissing = true)
 	public CommandLineRunner logEnvironment(Environment env) {
 		return args -> {
-			System.out.println("====== Environment Variables ======");
-			System.out.println("DB_URL: " + env.getProperty("spring.datasource.url"));
-			System.out.println("JWT Secret available: " + (env.getProperty(JWT_SECRET_KEY) != null));
-			System.out.println("JWT Secret available: " + (env.getProperty("JWT_SECRET_KEY") != null));
-			System.out.println("Active profiles: " + String.join(", ", env.getActiveProfiles()));
-			System.out.println("==================================");
+			LOGGER.info("====== Environment Variables ======");
+			LOGGER.info("DB_URL: {}", env.getProperty("spring.datasource.url"));
+			LOGGER.info("JWT secret available: {}", env.getProperty(JWT_SECRET_KEY) != null);
+			LOGGER.info("Active profiles: {}", String.join(", ", env.getActiveProfiles()));
+			LOGGER.info("==================================");
 		};
 	}
 
@@ -68,34 +79,41 @@ public class BackendApplication {
 			Role adminRole = createRoleIfNotExists(roleRepository, "ROLE_ADMIN");
 			Role userRole = createRoleIfNotExists(roleRepository, "ROLE_USER");
 
-			System.out.println("Roles creados/verificados: ROLE_ADMIN, ROLE_USER");
+			LOGGER.info("Roles creados/verificados: ROLE_ADMIN, ROLE_USER");
 
-			if (userRepository.findByUsername(dotenv.get("ADMIN_USERNAME")).isEmpty()) {
+			String adminUsername = dotenv.get(ADMIN_USERNAME_KEY);
+			String adminEmail = dotenv.get(ADMIN_EMAIL_KEY);
+			String adminPassword = dotenv.get(ADMIN_PASSWORD_KEY);
+			String userUsername = dotenv.get(USER_USERNAME_KEY);
+			String userEmail = dotenv.get(USER_EMAIL_KEY);
+			String userPassword = dotenv.get(USER_PASSWORD_KEY);
+
+			if (userRepository.findByUsername(adminUsername).isEmpty()) {
 				User admin = User.builder()
-						.username(dotenv.get("ADMIN_USERNAME"))
-						.email(dotenv.get("ADMIN_EMAIL"))
-						.password(encoder.encode(dotenv.get("ADMIN_PASSWORD")))
+						.username(adminUsername)
+						.email(adminEmail)
+						.password(encoder.encode(adminPassword))
 						.build();
 
 				admin.getRoles().add(adminRole);
 				userRepository.save(admin);
-				System.out.println("Usuario administrador creado: " + dotenv.get("ADMIN_USERNAME"));
+				LOGGER.info("Usuario administrador creado: {}", adminUsername);
 			} else {
-				System.out.println("Usuario administrador ya existe: " + dotenv.get("ADMIN_USERNAME"));
+				LOGGER.info("Usuario administrador ya existe: {}", adminUsername);
 			}
 
-			if (userRepository.findByUsername(dotenv.get("USER_USERNAME")).isEmpty()) {
+			if (userRepository.findByUsername(userUsername).isEmpty()) {
 				User user = User.builder()
-						.username(dotenv.get("USER_USERNAME"))
-						.email(dotenv.get("USER_EMAIL"))
-						.password(encoder.encode(dotenv.get("USER_PASSWORD")))
+						.username(userUsername)
+						.email(userEmail)
+						.password(encoder.encode(userPassword))
 						.build();
 
 				user.getRoles().add(userRole);
 				userRepository.save(user);
-				System.out.println("Usuario normal creado: " + dotenv.get("USER_USERNAME"));
+				LOGGER.info("Usuario normal creado: {}", userUsername);
 			} else {
-				System.out.println("Usuario normal ya existe: " + dotenv.get("USER_USERNAME"));
+				LOGGER.info("Usuario normal ya existe: {}", userUsername);
 			}
 		};
 	}
