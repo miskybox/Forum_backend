@@ -74,8 +74,26 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         tokenMap.put("refreshToken", refreshToken);
         tokenMap.put("username", username);
 
+        response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(tokenMap));
+        response.getWriter().flush();
+    }
+
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationException failed) throws IOException, ServletException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        Map<String, String> errorMap = new HashMap<>();
+        errorMap.put("message", "Credenciales inválidas");
+        errorMap.put("error", failed.getMessage());
+        
+        response.getWriter().write(objectMapper.writeValueAsString(errorMap));
+        response.getWriter().flush();
     }
 
 }
