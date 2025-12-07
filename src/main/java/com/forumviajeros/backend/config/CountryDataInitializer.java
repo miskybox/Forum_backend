@@ -33,15 +33,31 @@ public class CountryDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (countryRepository.count() == 0) {
+        long countryCount = countryRepository.count();
+        long triviaCount = triviaQuestionRepository.count();
+
+        log.info("===== DATA INITIALIZATION STATUS =====");
+        log.info("Current countries in database: {}", countryCount);
+        log.info("Current trivia questions in database: {}", triviaCount);
+
+        if (countryCount == 0) {
             log.info("Inicializando datos de países...");
             initializeCountries();
             log.info("Países inicializados correctamente");
-            
+
             log.info("Generando preguntas de trivia...");
             generateTriviaQuestions();
             log.info("Preguntas de trivia generadas correctamente");
+
+            // Log final counts
+            log.info("Final countries count: {}", countryRepository.count());
+            log.info("Final trivia questions count: {}", triviaQuestionRepository.count());
+        } else {
+            log.info("Countries data already exists. Skipping initialization.");
+            log.info("Expected: 30 countries, 120 trivia questions");
+            log.info("Actual: {} countries, {} trivia questions", countryCount, triviaCount);
         }
+        log.info("======================================");
     }
 
     private void initializeCountries() {
@@ -282,3 +298,4 @@ public class CountryDataInitializer implements CommandLineRunner {
     }
 }
 
+// Trigger reload
