@@ -30,17 +30,48 @@ public class CountryDataInitializer implements CommandLineRunner {
 
     private final CountryRepository countryRepository;
     private final TriviaQuestionRepository triviaQuestionRepository;
+    private final com.forumviajeros.backend.repository.TriviaAnswerRepository triviaAnswerRepository;
+    private final com.forumviajeros.backend.repository.TriviaGameRepository triviaGameRepository;
+    private final com.forumviajeros.backend.repository.TriviaScoreRepository triviaScoreRepository;
+    private final com.forumviajeros.backend.repository.VisitedPlaceRepository visitedPlaceRepository;
 
     @Override
     public void run(String... args) {
         long countryCount = countryRepository.count();
         long triviaCount = triviaQuestionRepository.count();
+        final int EXPECTED_COUNTRIES = 30;
+        final int EXPECTED_TRIVIA = 120;
 
         log.info("===== DATA INITIALIZATION STATUS =====");
         log.info("Current countries in database: {}", countryCount);
         log.info("Current trivia questions in database: {}", triviaCount);
 
-        if (countryCount == 0) {
+        // Check if data is missing or incomplete
+        boolean needsReload = countryCount == 0 || countryCount < EXPECTED_COUNTRIES || triviaCount < EXPECTED_TRIVIA;
+
+        if (needsReload) {
+            if (countryCount > 0) {
+                log.warn("INCOMPLETE DATA DETECTED! Cleaning and reloading...");
+                log.warn("Expected {} countries but found {}", EXPECTED_COUNTRIES, countryCount);
+                log.warn("Expected {} trivia questions but found {}", EXPECTED_TRIVIA, triviaCount);
+
+                // Clean incomplete data in correct dependency order
+                log.info("Deleting incomplete data...");
+                log.info("Deleting trivia answers...");
+                triviaAnswerRepository.deleteAll();
+                log.info("Deleting trivia scores...");
+                triviaScoreRepository.deleteAll();
+                log.info("Deleting trivia games...");
+                triviaGameRepository.deleteAll();
+                log.info("Deleting trivia questions...");
+                triviaQuestionRepository.deleteAll();
+                log.info("Deleting visited places...");
+                visitedPlaceRepository.deleteAll();
+                log.info("Deleting countries...");
+                countryRepository.deleteAll();
+                log.info("Data cleaned successfully");
+            }
+
             log.info("Inicializando datos de países...");
             initializeCountries();
             log.info("Países inicializados correctamente");
@@ -50,11 +81,21 @@ public class CountryDataInitializer implements CommandLineRunner {
             log.info("Preguntas de trivia generadas correctamente");
 
             // Log final counts
-            log.info("Final countries count: {}", countryRepository.count());
-            log.info("Final trivia questions count: {}", triviaQuestionRepository.count());
+            long finalCountries = countryRepository.count();
+            long finalTrivia = triviaQuestionRepository.count();
+            log.info("Final countries count: {}", finalCountries);
+            log.info("Final trivia questions count: {}", finalTrivia);
+
+            if (finalCountries == EXPECTED_COUNTRIES && finalTrivia >= EXPECTED_TRIVIA) {
+                log.info("✓ DATA INITIALIZATION SUCCESSFUL!");
+            } else {
+                log.error("✗ DATA INITIALIZATION INCOMPLETE!");
+                log.error("Expected: {} countries, {} trivia", EXPECTED_COUNTRIES, EXPECTED_TRIVIA);
+                log.error("Got: {} countries, {} trivia", finalCountries, finalTrivia);
+            }
         } else {
-            log.info("Countries data already exists. Skipping initialization.");
-            log.info("Expected: 30 countries, 120 trivia questions");
+            log.info("✓ Data already complete. Skipping initialization.");
+            log.info("Expected: {} countries, {} trivia questions", EXPECTED_COUNTRIES, EXPECTED_TRIVIA);
             log.info("Actual: {} countries, {} trivia questions", countryCount, triviaCount);
         }
         log.info("======================================");
@@ -159,7 +200,12 @@ public class CountryDataInitializer implements CommandLineRunner {
                 Arrays.asList("Árabe", "Bereber"), "+212", "Africa/Casablanca"),
             createCountry("KE", "KEN", "Kenia", "Kenya", "República de Kenia", "Nairobi", "África", "África Oriental",
                 "Chelín keniano", "KES", "KSh", "🇰🇪", 53770000L, 580367.0, -0.0236, 37.9062,
-                Arrays.asList("Suajili", "Inglés"), "+254", "Africa/Nairobi")
+                Arrays.asList("Suajili", "Inglés"), "+254", "Africa/Nairobi"),
+
+            // EURASIA
+            createCountry("TR", "TUR", "Turquía", "Turkey", "República de Turquía", "Ankara", "Asia", "Asia Occidental",
+                "Lira turca", "TRY", "₺", "🇹🇷", 84340000L, 783562.0, 38.9637, 35.2433,
+                Arrays.asList("Turco"), "+90", "Europe/Istanbul")
         );
 
         countryRepository.saveAll(countries);
