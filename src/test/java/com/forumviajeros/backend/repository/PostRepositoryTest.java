@@ -8,11 +8,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Import;
+
 
 import com.forumviajeros.backend.model.Category;
 import com.forumviajeros.backend.model.Forum;
@@ -22,14 +23,9 @@ import com.forumviajeros.backend.model.User;
 /**
  * Tests de integración para PostRepository con PostgreSQL
  */
-@DataJpaTest
+@SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
-})
+@Transactional
 class PostRepositoryTest {
 
     @Autowired

@@ -53,7 +53,7 @@ public class SecurityConfig {
 
                                                 .requestMatchers(HttpMethod.GET, "/api/categories", "/api/categories/**",
                                                                 "/api/forums", "/api/forums/**", "/api/posts/**",
-                                                                "/api/comments/**")
+                                                                "/api/comments/**", "/api/countries", "/api/countries/**", "/api/trivia/**", "/api/visited-places/**")
                                                 .permitAll()
                                                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/{id}")
                                                 .permitAll()

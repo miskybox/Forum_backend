@@ -8,34 +8,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.forumviajeros.backend.model.Category;
 import com.forumviajeros.backend.model.Forum;
 import com.forumviajeros.backend.model.User;
 
 /**
- * Tests de integración para ForumRepository con PostgreSQL
+ * Tests de integración para ForumRepository
  */
-@DataJpaTest
+@SpringBootTest
 @ActiveProfiles("test")
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"
-})
+@Transactional
 class ForumRepositoryTest {
-
-    @Autowired
-    private TestEntityManager entityManager;
 
     @Autowired
     private ForumRepository forumRepository;
@@ -54,16 +44,16 @@ class ForumRepositoryTest {
     void setUp() {
         // Crear usuario
         testUser = new User();
-        testUser.setUsername("forumuser");
-        testUser.setEmail("forum@example.com");
+        testUser.setUsername("forumuser_" + System.currentTimeMillis());
+        testUser.setEmail("forum" + System.currentTimeMillis() + "@example.com");
         testUser.setPassword("password123");
         testUser.setStatus(User.UserStatus.ACTIVE);
         testUser = userRepository.save(testUser);
 
         // Crear categoría
         testCategory = new Category();
-        testCategory.setName("Europa");
-        testCategory.setDescription("Foros sobre Europa");
+        testCategory.setName("TestCategory_" + System.currentTimeMillis());
+        testCategory.setDescription("Test category for forum tests");
         testCategory.setType("CONTINENT");
         testCategory = categoryRepository.save(testCategory);
 
