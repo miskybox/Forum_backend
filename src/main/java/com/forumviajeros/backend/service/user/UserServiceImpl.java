@@ -113,6 +113,25 @@ public class UserServiceImpl implements UserService {
         return mapToResponseDTO(updatedUser);
     }
 
+    @Override
+    public UserResponseDTO updateUserRoles(Long id, Set<String> roles) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Set<Role> roleSet = roles.stream()
+                .map(roleName -> {
+                    // Aceptar roles con o sin prefijo ROLE_
+                    String roleNameWithPrefix = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                    return roleRepository.findByName(roleNameWithPrefix)
+                            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName));
+                })
+                .collect(Collectors.toSet());
+
+        user.setRoles(roleSet);
+        User updatedUser = userRepository.save(user);
+        return mapToResponseDTO(updatedUser);
+    }
+
     private User convertToEntity(UserRequestDTO dto) {
         User user = new User();
         user.setUsername(dto.getUsername());

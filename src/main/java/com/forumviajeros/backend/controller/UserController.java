@@ -117,6 +117,18 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @PutMapping("/{id}/roles")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Actualizar roles de usuario", description = "Actualiza los roles asignados a un usuario")
+    @ApiResponse(responseCode = "200", description = "Roles actualizados con éxito")
+    @ApiResponse(responseCode = "404", description = "Usuario no encontrado", content = @Content)
+    public ResponseEntity<UserResponseDTO> updateUserRoles(
+            @PathVariable Long id,
+            @RequestBody List<String> roles) {
+        UserResponseDTO user = userService.updateUserRoles(id, Set.copyOf(roles));
+        return ResponseEntity.ok(user);
+    }
+
     private void assertCanManageUser(Long userId, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");

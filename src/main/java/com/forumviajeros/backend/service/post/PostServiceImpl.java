@@ -180,7 +180,7 @@ public class PostServiceImpl implements PostService {
             throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");
         }
 
-        if (isAdmin(authentication)) {
+        if (isAdmin(authentication) || isModerator(authentication)) {
             return;
         }
 
@@ -195,5 +195,11 @@ public class PostServiceImpl implements PostService {
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+    }
+
+    private boolean isModerator(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_MODERATOR"));
     }
 }

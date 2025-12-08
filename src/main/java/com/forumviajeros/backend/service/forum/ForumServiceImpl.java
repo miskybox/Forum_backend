@@ -201,7 +201,7 @@ public class ForumServiceImpl implements ForumService {
                         throw new org.springframework.security.access.AccessDeniedException("Usuario no autenticado");
                 }
 
-                if (isAdmin(authentication)) {
+                if (isAdmin(authentication) || isModerator(authentication)) {
                         return;
                 }
 
@@ -216,6 +216,12 @@ public class ForumServiceImpl implements ForumService {
                 return authentication.getAuthorities().stream()
                                 .map(GrantedAuthority::getAuthority)
                                 .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+        }
+
+        private boolean isModerator(Authentication authentication) {
+                return authentication.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .anyMatch(authority -> authority.equals("ROLE_MODERATOR"));
         }
 
         private List<String> sanitizeTagNames(List<String> tags) {

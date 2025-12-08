@@ -24,4 +24,6 @@ public interface UserService {
     void deleteUser(Long id);
 
     UserResponseDTO changePassword(Long id, String currentPassword, String newPassword);
+
+    UserResponseDTO updateUserRoles(Long id, Set<String> roles);
 }

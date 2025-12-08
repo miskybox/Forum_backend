@@ -1,5 +1,7 @@
 package com.forumviajeros.backend.dto.user;
 
+import com.forumviajeros.backend.validation.ValidPassword;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +14,7 @@ public class ChangePasswordRequestDTO {
     private String currentPassword;
 
     @NotBlank(message = "La nueva contraseña es obligatoria")
+    @ValidPassword
     private String newPassword;
 }
 

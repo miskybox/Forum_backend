@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import com.forumviajeros.backend.dto.comment.CommentRequestDTO;
@@ -59,7 +60,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", commentId));
 
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(user.getId()) && !isAdmin(authentication) && !isModerator(authentication)) {
             throw new AccessDeniedException("No tienes permisos para editar este comentario");
         }
 
@@ -102,7 +103,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", id));
 
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(user.getId()) && !isAdmin(authentication) && !isModerator(authentication)) {
             throw new AccessDeniedException("No tienes permisos para eliminar este comentario");
         }
 
@@ -117,6 +118,24 @@ public class CommentServiceImpl implements CommentService {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username));
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+    }
+
+    private boolean isModerator(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_MODERATOR"));
     }
 
     private CommentResponseDTO mapToResponseDTO(Comment comment) {

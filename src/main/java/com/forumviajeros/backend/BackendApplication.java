@@ -34,6 +34,9 @@ public class BackendApplication {
 	public static final String USER_USERNAME_KEY = "USER_USERNAME";
 	public static final String USER_EMAIL_KEY = "USER_EMAIL";
 	public static final String USER_PASSWORD_KEY = "USER_PASSWORD";
+	public static final String MODERATOR_USERNAME_KEY = "MODERATOR_USERNAME";
+	public static final String MODERATOR_EMAIL_KEY = "MODERATOR_EMAIL";
+	public static final String MODERATOR_PASSWORD_KEY = "MODERATOR_PASSWORD";
 
 	public static void main(String[] args) {
 
@@ -76,10 +79,11 @@ public class BackendApplication {
 		return args -> {
 			Dotenv dotenv = Dotenv.load();
 
-			Role adminRole = createRoleIfNotExists(roleRepository, "ROLE_ADMIN");
-			Role userRole = createRoleIfNotExists(roleRepository, "ROLE_USER");
+		Role adminRole = createRoleIfNotExists(roleRepository, "ROLE_ADMIN", "Rol para administradores del sistema");
+		Role moderatorRole = createRoleIfNotExists(roleRepository, "ROLE_MODERATOR", "Rol para moderadores del foro");
+		Role userRole = createRoleIfNotExists(roleRepository, "ROLE_USER", "Rol por defecto para usuarios registrados");
 
-			LOGGER.info("Roles creados/verificados: ROLE_ADMIN, ROLE_USER");
+		LOGGER.info("Roles creados/verificados: ROLE_ADMIN, ROLE_MODERATOR, ROLE_USER");
 
 			String adminUsername = dotenv.get(ADMIN_USERNAME_KEY);
 			String adminEmail = dotenv.get(ADMIN_EMAIL_KEY);
@@ -87,8 +91,12 @@ public class BackendApplication {
 			String userUsername = dotenv.get(USER_USERNAME_KEY);
 			String userEmail = dotenv.get(USER_EMAIL_KEY);
 			String userPassword = dotenv.get(USER_PASSWORD_KEY);
+			String moderatorUsername = dotenv.get(MODERATOR_USERNAME_KEY, "moderator");
+			String moderatorEmail = dotenv.get(MODERATOR_EMAIL_KEY, "moderator@forumviajeros.com");
+			String moderatorPassword = dotenv.get(MODERATOR_PASSWORD_KEY, "Moderator123!");
 
-			if (userRepository.findByUsername(adminUsername).isEmpty()) {
+			// Crear usuario administrador
+			if (adminUsername != null && !adminUsername.isBlank() && userRepository.findByUsername(adminUsername).isEmpty()) {
 				User admin = User.builder()
 						.username(adminUsername)
 						.email(adminEmail)
@@ -98,11 +106,27 @@ public class BackendApplication {
 				admin.getRoles().add(adminRole);
 				userRepository.save(admin);
 				LOGGER.info("Usuario administrador creado: {}", adminUsername);
-			} else {
+			} else if (adminUsername != null && !adminUsername.isBlank()) {
 				LOGGER.info("Usuario administrador ya existe: {}", adminUsername);
 			}
 
-			if (userRepository.findByUsername(userUsername).isEmpty()) {
+			// Crear usuario moderador
+			if (userRepository.findByUsername(moderatorUsername).isEmpty()) {
+				User moderator = User.builder()
+						.username(moderatorUsername)
+						.email(moderatorEmail)
+						.password(encoder.encode(moderatorPassword))
+						.build();
+
+				moderator.getRoles().add(moderatorRole);
+				userRepository.save(moderator);
+				LOGGER.info("Usuario moderador creado: {}", moderatorUsername);
+			} else {
+				LOGGER.info("Usuario moderador ya existe: {}", moderatorUsername);
+			}
+
+			// Crear usuario normal
+			if (userUsername != null && !userUsername.isBlank() && userRepository.findByUsername(userUsername).isEmpty()) {
 				User user = User.builder()
 						.username(userUsername)
 						.email(userEmail)
@@ -112,17 +136,24 @@ public class BackendApplication {
 				user.getRoles().add(userRole);
 				userRepository.save(user);
 				LOGGER.info("Usuario normal creado: {}", userUsername);
-			} else {
+			} else if (userUsername != null && !userUsername.isBlank()) {
 				LOGGER.info("Usuario normal ya existe: {}", userUsername);
 			}
 		};
 	}
 
 	private Role createRoleIfNotExists(RoleRepository roleRepository, String roleName) {
+		return createRoleIfNotExists(roleRepository, roleName, null);
+	}
+
+	private Role createRoleIfNotExists(RoleRepository roleRepository, String roleName, String description) {
 		return roleRepository.findByName(roleName)
 				.orElseGet(() -> {
 					Role role = new Role();
 					role.setName(roleName);
+					if (description != null) {
+						role.setDescription(description);
+					}
 					return roleRepository.save(role);
 				});
 	}

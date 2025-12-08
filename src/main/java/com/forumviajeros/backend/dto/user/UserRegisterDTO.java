@@ -1,5 +1,7 @@
 package com.forumviajeros.backend.dto.user;
 
+import com.forumviajeros.backend.validation.ValidPassword;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +12,8 @@ import lombok.Setter;
 @Setter
 public class UserRegisterDTO {
 
-    @NotBlank(message = "El nombre es obligatorio")
+    @NotBlank(message = "El nombre de usuario es obligatorio")
+    @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres")
     private String username;
 
     @NotBlank(message = "El correo electrónico es obligatorio")
@@ -18,7 +21,7 @@ public class UserRegisterDTO {
     private String email;
 
     @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    @ValidPassword
     private String password;
 
 }
