@@ -40,7 +40,18 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
         this.refreshTokenService = refreshTokenService;
-        setFilterProcessesUrl("/api/auth/login");
+        // No procesar /api/auth/login aquí, dejar que AuthController lo maneje
+        setFilterProcessesUrl("/api/auth/login-disabled");
+    }
+    
+    @Override
+    protected boolean requiresAuthentication(HttpServletRequest request, HttpServletResponse response) {
+        // No procesar /api/auth/login, dejar que el controlador lo maneje
+        String path = request.getRequestURI();
+        if ("/api/auth/login".equals(path)) {
+            return false;
+        }
+        return super.requiresAuthentication(request, response);
     }
 
     @Override

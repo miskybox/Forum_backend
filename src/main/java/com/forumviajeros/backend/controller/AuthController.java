@@ -1,5 +1,8 @@
 package com.forumviajeros.backend.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -53,13 +56,17 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             // Para errores de validación o usuario existente
             logger.warn("Error de validación en registro: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             // Log detallado para cualquier otra excepción
             logger.error("Error interno al registrar usuario: {}", e.getMessage(), e);
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Error al procesar el registro: " + e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al procesar el registro: " + e.getMessage());
+                    .body(errorResponse);
         }
     }
 
@@ -75,9 +82,11 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error en inicio de sesión: {}", e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Error de autenticación: " + e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body("Error de autenticación: " + e.getMessage());
+                    .body(errorResponse);
         }
     }
 
@@ -91,9 +100,11 @@ public class AuthController {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             logger.error("Error al cerrar sesión: {}", e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Error al cerrar sesión: " + e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al cerrar sesión: " + e.getMessage());
+                    .body(errorResponse);
         }
     }
 
@@ -109,9 +120,11 @@ public class AuthController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error al renovar token: {}", e.getMessage());
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Error al renovar token: " + e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body("Error al renovar token: " + e.getMessage());
+                    .body(errorResponse);
         }
     }
 }
