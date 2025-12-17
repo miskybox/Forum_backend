@@ -91,7 +91,7 @@ public class RefreshTokenService {
                 .withSubject(username)
                 .withClaim("tokenId", tokenId)
                 .withExpiresAt(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION))
-                .sign(Algorithm.HMAC512(SecurityConstants.SECRET));
+                .sign(Algorithm.HMAC512(SecurityConstants.getSecret()));
 
         saveToken(refreshToken, username);
 
@@ -102,7 +102,7 @@ public class RefreshTokenService {
         return JWT.create()
                 .withSubject(username)
                 .withExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.EXPIRATION_TIME))
-                .sign(Algorithm.HMAC512(SecurityConstants.SECRET));
+                .sign(Algorithm.HMAC512(SecurityConstants.getSecret()));
     }
 
     public String extractRefreshTokenFromRequest(HttpServletRequest request) {
@@ -116,7 +116,7 @@ public class RefreshTokenService {
     }
 
     private DecodedJWT decode(String refreshToken) {
-        return JWT.require(Algorithm.HMAC512(SecurityConstants.SECRET))
+        return JWT.require(Algorithm.HMAC512(SecurityConstants.getSecret()))
                 .build()
                 .verify(refreshToken);
     }

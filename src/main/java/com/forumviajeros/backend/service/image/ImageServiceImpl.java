@@ -2,7 +2,7 @@ package com.forumviajeros.backend.service.image;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;

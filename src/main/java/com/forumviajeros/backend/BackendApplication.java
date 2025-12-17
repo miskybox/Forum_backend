@@ -42,10 +42,10 @@ public class BackendApplication {
 
 		Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-		if (dotenv.get(DB_URL) == null || dotenv.get(DB_USER) == null) {
-			LOGGER.warn("Essential environment variables are not defined correctly.");
-		}
+		// Validar variables de entorno críticas antes de iniciar
+		validateEnvironmentVariables(dotenv);
 
+		// Configurar variables de entorno como System Properties
 		System.setProperty(DB_URL, dotenv.get(DB_URL, ""));
 		System.setProperty(DB_USER, dotenv.get(DB_USER, ""));
 		System.setProperty(DB_PASSWORD, dotenv.get(DB_PASSWORD, ""));
@@ -58,6 +58,63 @@ public class BackendApplication {
 		}
 
 		SpringApplication.run(BackendApplication.class, args);
+	}
+
+	/**
+	 * Valida que todas las variables de entorno críticas estén configuradas.
+	 * 
+	 * @param dotenv El objeto Dotenv cargado
+	 * @throws IllegalStateException si alguna variable crítica falta o es inválida
+	 */
+	private static void validateEnvironmentVariables(Dotenv dotenv) {
+		LOGGER.info("Validando variables de entorno...");
+		
+		boolean hasErrors = false;
+		StringBuilder errors = new StringBuilder();
+		
+		// Validar DB_URL
+		String dbUrl = dotenv.get(DB_URL);
+		if (dbUrl == null || dbUrl.isBlank()) {
+			errors.append("\n  - DB_URL: Requerida (ej: jdbc:postgresql://localhost:5432/forum_viajeros)");
+			hasErrors = true;
+		} else if (!dbUrl.startsWith("jdbc:")) {
+			errors.append("\n  - DB_URL: Formato inválido (debe empezar con 'jdbc:')");
+			hasErrors = true;
+		}
+		
+		// Validar DB_USER
+		String dbUser = dotenv.get(DB_USER);
+		if (dbUser == null || dbUser.isBlank()) {
+			errors.append("\n  - DB_USER: Requerida (ej: postgres)");
+			hasErrors = true;
+		}
+		
+		// Validar DB_PASSWORD
+		String dbPassword = dotenv.get(DB_PASSWORD);
+		if (dbPassword == null || dbPassword.isBlank()) {
+			errors.append("\n  - DB_PASSWORD: Requerida");
+			hasErrors = true;
+		}
+		
+		// Validar JWT_SECRET_KEY
+		String jwtSecret = dotenv.get(JWT_SECRET_KEY);
+		if (jwtSecret == null || jwtSecret.isBlank()) {
+			errors.append("\n  - JWT_SECRET_KEY: Requerida (mínimo 64 caracteres)");
+			hasErrors = true;
+		} else if (jwtSecret.length() < 64) {
+			errors.append("\n  - JWT_SECRET_KEY: Debe tener al menos 64 caracteres (longitud actual: ")
+					.append(jwtSecret.length()).append(")");
+			hasErrors = true;
+		}
+		
+		if (hasErrors) {
+			String errorMessage = "Variables de entorno críticas faltantes o inválidas:" + errors.toString() +
+					"\n\nPor favor, configura estas variables en el archivo .env o como variables de entorno del sistema.";
+			LOGGER.error(errorMessage);
+			throw new IllegalStateException(errorMessage);
+		}
+		
+		LOGGER.info("✅ Todas las variables de entorno críticas están configuradas correctamente");
 	}
 
 	@Bean
@@ -142,6 +199,8 @@ public class BackendApplication {
 		};
 	}
 
+	// Método helper para crear roles (usado internamente)
+	@SuppressWarnings("unused")
 	private Role createRoleIfNotExists(RoleRepository roleRepository, String roleName) {
 		return createRoleIfNotExists(roleRepository, roleName, null);
 	}

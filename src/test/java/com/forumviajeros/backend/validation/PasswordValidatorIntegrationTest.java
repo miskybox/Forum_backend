@@ -1,13 +1,14 @@
 package com.forumviajeros.backend.validation;
 
-import static org.junit.jupiter.api.Assertions.*;
+import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,7 +17,6 @@ import com.forumviajeros.backend.dto.user.UserRegisterDTO;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
-import java.util.Set;
 
 /**
  * Tests de integración para la validación de contraseñas
@@ -30,9 +30,11 @@ class PasswordValidatorIntegrationTest {
     private Validator validator;
 
     @Autowired
+    @SuppressWarnings("unused")
     private MockMvc mockMvc;
 
     @Autowired
+    @SuppressWarnings("unused")
     private ObjectMapper objectMapper;
 
     @Test

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,33 @@ class RoleRepositoryTest {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @BeforeEach
+    void setUp() {
+        // Crear roles principales si no existen
+        if (roleRepository.findByName("ROLE_USER").isEmpty()) {
+            Role roleUser = new Role();
+            roleUser.setName("ROLE_USER");
+            roleUser.setDescription("Usuario estándar");
+            roleRepository.save(roleUser);
+        }
+
+        if (roleRepository.findByName("ROLE_MODERATOR").isEmpty()) {
+            Role roleModerator = new Role();
+            roleModerator.setName("ROLE_MODERATOR");
+            roleModerator.setDescription("Moderador del foro");
+            roleRepository.save(roleModerator);
+        }
+
+        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
+            Role roleAdmin = new Role();
+            roleAdmin.setName("ROLE_ADMIN");
+            roleAdmin.setDescription("Administrador del sistema");
+            roleRepository.save(roleAdmin);
+        }
+
+        roleRepository.flush();
+    }
 
     @Test
     @DisplayName("Debe encontrar ROLE_USER")

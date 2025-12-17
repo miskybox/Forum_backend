@@ -8,11 +8,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.context.annotation.Import;
 
 
 import com.forumviajeros.backend.model.Category;
@@ -23,9 +23,9 @@ import com.forumviajeros.backend.model.User;
 /**
  * Tests de integración para PostRepository con PostgreSQL
  */
-@SpringBootTest
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = Replace.NONE)
 @ActiveProfiles("test")
-@Transactional
 class PostRepositoryTest {
 
     @Autowired
@@ -33,15 +33,6 @@ class PostRepositoryTest {
 
     @Autowired
     private PostRepository postRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
-
-    @Autowired
-    private ForumRepository forumRepository;
 
     private User testUser;
     private Category testCategory;
@@ -56,14 +47,14 @@ class PostRepositoryTest {
         testUser.setEmail("post@example.com");
         testUser.setPassword("password123");
         testUser.setStatus(User.UserStatus.ACTIVE);
-        testUser = userRepository.save(testUser);
+        testUser = entityManager.persistAndFlush(testUser);
 
         // Crear categoría
         testCategory = new Category();
         testCategory.setName("Europa");
         testCategory.setDescription("Foros sobre Europa");
         testCategory.setType("CONTINENT");
-        testCategory = categoryRepository.save(testCategory);
+        testCategory = entityManager.persistAndFlush(testCategory);
 
         // Crear foro
         testForum = new Forum();
@@ -73,7 +64,7 @@ class PostRepositoryTest {
         testForum.setUser(testUser);
         testForum.setCategory(testCategory);
         testForum.setViewCount(0L);
-        testForum = forumRepository.save(testForum);
+        testForum = entityManager.persistAndFlush(testForum);
 
         // Crear post
         testPost = new Post();

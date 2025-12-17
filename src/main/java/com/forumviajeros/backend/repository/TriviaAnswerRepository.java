@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.forumviajeros.backend.model.TriviaAnswer;
-import com.forumviajeros.backend.model.TriviaQuestion.QuestionType;
+
 
 /**
  * Repositorio para la entidad TriviaAnswer

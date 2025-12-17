@@ -22,11 +22,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.forumviajeros.backend.security.filter.JwtAuthenticationFilter;
 import com.forumviajeros.backend.security.filter.JwtAuthorizationFilter;
+import com.forumviajeros.backend.security.filter.RateLimitingFilter;
 import com.forumviajeros.backend.service.token.RefreshTokenService;
 
 import lombok.RequiredArgsConstructor;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
@@ -34,13 +35,19 @@ public class SecurityConfig {
 
         private final UserDetailsService userDetailsService;
         private final RefreshTokenService refreshTokenService;
+        private final RateLimitingFilter rateLimitingFilter;
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationConfiguration authConfig)
                         throws Exception {
                 return http
-                                .csrf(csrf -> csrf.disable())
+                                .csrf(csrf -> csrf.disable()) // Deshabilitado para APIs REST con JWT
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .headers(headers -> headers
+                                                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+                                                .frameOptions(frame -> frame.deny())
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .maxAgeInSeconds(31536000)))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
@@ -65,6 +72,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/attendances/**").authenticated()
                                                 .requestMatchers("/api/users/me").authenticated()
                                                 .anyRequest().authenticated())
+                                .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class)
                                 .addFilterBefore(
                                                 new JwtAuthenticationFilter(authenticationManager(authConfig),
                                                                 refreshTokenService),
@@ -83,6 +91,21 @@ public class SecurityConfig {
                 if (allowedOrigins == null || allowedOrigins.isBlank()) {
                         allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:5173");
                 }
+                
+                // Validar que no esté vacío y no sea "*" en producción
+                if (allowedOrigins == null || allowedOrigins.isBlank()) {
+                        throw new IllegalStateException(
+                                "CORS_ALLOWED_ORIGINS debe estar configurado. " +
+                                "No se permite '*' en producción por seguridad.");
+                }
+                
+                // Validar que no sea "*" (demasiado permisivo)
+                if (allowedOrigins.trim().equals("*")) {
+                        throw new IllegalStateException(
+                                "CORS_ALLOWED_ORIGINS no puede ser '*' por seguridad. " +
+                                "Especifica orígenes específicos separados por comas.");
+                }
+                
                 configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
                 
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
