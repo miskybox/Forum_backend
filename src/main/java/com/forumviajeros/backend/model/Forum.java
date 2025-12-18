@@ -69,6 +69,9 @@ public class Forum {
     @Column(name = "view_count", nullable = false)
     private Long viewCount = 0L;
 
+    @Column(name = "image_path")
+    private String imagePath;
+
     public enum ForumStatus {
         ACTIVE, INACTIVE, ARCHIVED
     }

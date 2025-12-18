@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.forumviajeros.backend.dto.comment.CommentRequestDTO;
 import com.forumviajeros.backend.dto.comment.CommentResponseDTO;
+import com.forumviajeros.backend.exception.ResourceNotFoundException;
 import com.forumviajeros.backend.service.comment.CommentService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,10 +25,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/comments")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Comments", description = "API para gestión de comentarios en publicaciones")
 public class CommentController {
 
@@ -45,26 +48,50 @@ public class CommentController {
     @ApiResponse(responseCode = "200", description = "Comentario encontrado con éxito")
     @ApiResponse(responseCode = "404", description = "Comentario no encontrado", content = @Content)
     public ResponseEntity<CommentResponseDTO> getCommentById(@PathVariable Long id) {
-        return ResponseEntity.ok(commentService.getComment(id));
+        log.debug("Obteniendo comentario con id: {}", id);
+        try {
+            return ResponseEntity.ok(commentService.getComment(id));
+        } catch (Exception e) {
+            log.warn("Comentario no encontrado con id: {}", id);
+            throw new ResourceNotFoundException("Comentario", "id", id);
+        }
     }
 
     @GetMapping("/post/{postId}")
     @Operation(summary = "Obtener comentarios por publicación", description = "Devuelve todos los comentarios de una publicación específica")
     @ApiResponse(responseCode = "200", description = "Lista de comentarios obtenida con éxito")
+    @ApiResponse(responseCode = "404", description = "Publicación no encontrada", content = @Content)
     public ResponseEntity<List<CommentResponseDTO>> getCommentsByPost(@PathVariable Long postId) {
-        return ResponseEntity.ok(commentService.getCommentsByPost(postId));
+        log.debug("Obteniendo comentarios del post con id: {}", postId);
+        try {
+            return ResponseEntity.ok(commentService.getCommentsByPost(postId));
+        } catch (Exception e) {
+            log.warn("Error al obtener comentarios del post {}: {}", postId, e.getMessage());
+            throw new ResourceNotFoundException("Post", "id", postId);
+        }
     }
 
     @PostMapping("/post/{postId}")
     @Operation(summary = "Crear nuevo comentario", description = "Crea un nuevo comentario en una publicación específica")
     @ApiResponse(responseCode = "201", description = "Comentario creado exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos de comentario inválidos", content = @Content)
+    @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content)
+    @ApiResponse(responseCode = "404", description = "Publicación no encontrada", content = @Content)
     public ResponseEntity<CommentResponseDTO> createComment(
             @PathVariable Long postId,
             @Valid @RequestBody CommentRequestDTO commentDTO,
             Authentication authentication) {
-        return new ResponseEntity<>(commentService.createComment(commentDTO, authentication, postId),
-                HttpStatus.CREATED);
+        String username = authentication.getName();
+        log.info("Usuario {} creando comentario en post {}", username, postId);
+        try {
+            CommentResponseDTO createdComment = commentService.createComment(commentDTO, authentication, postId);
+            log.info("Comentario creado exitosamente con id: {} por usuario: {} en post: {}", 
+                    createdComment.getId(), username, postId);
+            return new ResponseEntity<>(createdComment, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("Error al crear comentario en post {} por usuario {}: {}", postId, username, e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PutMapping("/{id}")
@@ -76,7 +103,16 @@ public class CommentController {
             @PathVariable Long id,
             @Valid @RequestBody CommentRequestDTO commentDTO,
             Authentication authentication) {
-        return ResponseEntity.ok(commentService.updateComment(id, commentDTO, authentication));
+        String username = authentication.getName();
+        log.info("Usuario {} actualizando comentario con id: {}", username, id);
+        try {
+            CommentResponseDTO updatedComment = commentService.updateComment(id, commentDTO, authentication);
+            log.info("Comentario con id: {} actualizado exitosamente por usuario: {}", id, username);
+            return ResponseEntity.ok(updatedComment);
+        } catch (Exception e) {
+            log.warn("Error al actualizar comentario {} por usuario {}: {}", id, username, e.getMessage());
+            throw e;
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -85,7 +121,15 @@ public class CommentController {
     @ApiResponse(responseCode = "404", description = "Comentario no encontrado", content = @Content)
     @ApiResponse(responseCode = "403", description = "No autorizado para eliminar este comentario", content = @Content)
     public ResponseEntity<Void> deleteComment(@PathVariable Long id, Authentication authentication) {
-        commentService.deleteComment(id, authentication);
-        return ResponseEntity.noContent().build();
+        String username = authentication.getName();
+        log.info("Usuario {} eliminando comentario con id: {}", username, id);
+        try {
+            commentService.deleteComment(id, authentication);
+            log.info("Comentario con id: {} eliminado exitosamente por usuario: {}", id, username);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.warn("Error al eliminar comentario {} por usuario {}: {}", id, username, e.getMessage());
+            throw e;
+        }
     }
 }

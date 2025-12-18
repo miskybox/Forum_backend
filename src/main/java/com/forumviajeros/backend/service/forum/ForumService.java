@@ -37,4 +37,6 @@ public interface ForumService {
     ForumResponseDTO updateImage(Long id, MultipartFile file, Authentication authentication);
 
     void deleteForum(Long id);
+
+    ForumResponseDTO updateForumStatus(Long id, String status, Authentication authentication);
 }

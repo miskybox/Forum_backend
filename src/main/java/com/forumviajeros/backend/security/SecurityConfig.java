@@ -106,7 +106,27 @@ public class SecurityConfig {
                                 "Especifica orígenes específicos separados por comas.");
                 }
                 
-                configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+                // Validar formato de URLs y limpiar espacios
+                String[] origins = allowedOrigins.split(",");
+                for (int i = 0; i < origins.length; i++) {
+                        origins[i] = origins[i].trim();
+                        
+                        // Validar que cada origen tenga formato válido (http:// o https://)
+                        if (!origins[i].startsWith("http://") && !origins[i].startsWith("https://")) {
+                                throw new IllegalStateException(
+                                        "CORS_ALLOWED_ORIGINS contiene un origen inválido: '" + origins[i] + "'. " +
+                                        "Los orígenes deben empezar con http:// o https://");
+                        }
+                        
+                        // Validar que no haya espacios en medio de la URL
+                        if (origins[i].contains(" ")) {
+                                throw new IllegalStateException(
+                                        "CORS_ALLOWED_ORIGINS contiene espacios en el origen: '" + origins[i] + "'. " +
+                                        "Asegúrate de separar múltiples orígenes solo con comas.");
+                        }
+                }
+                
+                configuration.setAllowedOrigins(Arrays.asList(origins));
                 
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Refresh-Token"));

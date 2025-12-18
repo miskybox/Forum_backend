@@ -29,4 +29,6 @@ public class ForumResponseDTO {
     private String createdAt;
 
     private String updatedAt;
+
+    private String imagePath;
 }

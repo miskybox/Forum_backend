@@ -56,7 +56,15 @@ public class PostServiceImpl implements PostService {
         post.setTitle(HtmlSanitizer.stripAllTags(dto.getTitle()));
         post.setContent(HtmlSanitizer.sanitizeRichText(dto.getContent()));
         post.setUser(userRepository.findById(userId).orElseThrow());
-        post.setForum(forumRepository.findById(dto.getForumId()).orElseThrow());
+
+        // Validar que el foro esté activo antes de crear el post
+        Forum forum = forumRepository.findById(dto.getForumId()).orElseThrow();
+        if (forum.getStatus() != Forum.ForumStatus.ACTIVE) {
+            throw new IllegalStateException("No se pueden crear posts en un foro " +
+                forum.getStatus().name().toLowerCase() + ". El foro debe estar activo.");
+        }
+
+        post.setForum(forum);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
 

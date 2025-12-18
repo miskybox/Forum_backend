@@ -25,18 +25,23 @@ import com.forumviajeros.backend.repository.CategoryRepository;
 import com.forumviajeros.backend.repository.ForumRepository;
 import com.forumviajeros.backend.repository.TagRepository;
 import com.forumviajeros.backend.repository.UserRepository;
+import com.forumviajeros.backend.service.storage.LocalStorageService;
+import com.forumviajeros.backend.service.storage.StorageException;
 import com.forumviajeros.backend.util.HtmlSanitizer;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional(readOnly = true)
 public class ForumServiceImpl implements ForumService {
         private final ForumRepository forumRepository;
         private final UserRepository userRepository;
         private final CategoryRepository categoryRepository;
         private final TagRepository tagRepository;
+        private final LocalStorageService localStorageService;
 
         @Override
         @Transactional
@@ -155,14 +160,47 @@ public class ForumServiceImpl implements ForumService {
         @Override
         @Transactional
         public ForumResponseDTO updateImage(Long id, MultipartFile file, Authentication authentication) {
+                String username = authentication != null ? authentication.getName() : "unknown";
+                log.info("Usuario {} subiendo imagen al foro con id: {}", username, id);
+
                 Forum forum = forumRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Foro", "id", id));
 
                 assertOwnershipOrAdmin(forum, authentication);
 
-                // TODO: implementar subida real con LocalStorageService
-                forum.setUpdatedAt(LocalDateTime.now());
-                return mapToResponseDTO(forumRepository.save(forum));
+                // Validar que el archivo no esté vacío
+                if (file == null || file.isEmpty()) {
+                        log.warn("Intento de subir archivo vacío al foro {} por usuario: {}", id, username);
+                        throw new IllegalArgumentException("El archivo no puede estar vacío");
+                }
+
+                try {
+                        // Eliminar imagen anterior si existe
+                        if (forum.getImagePath() != null && !forum.getImagePath().isEmpty()) {
+                                try {
+                                        localStorageService.delete(forum.getImagePath());
+                                        log.debug("Imagen anterior eliminada: {}", forum.getImagePath());
+                                } catch (StorageException e) {
+                                        // Log el error pero continuar con la subida de la nueva imagen
+                                        log.warn("No se pudo eliminar la imagen anterior {}: {}", forum.getImagePath(),
+                                                        e.getMessage());
+                                }
+                        }
+
+                        // Guardar nueva imagen (LocalStorageService valida el tipo de archivo)
+                        String fileName = localStorageService.store(file);
+                        forum.setImagePath(fileName);
+                        forum.setUpdatedAt(LocalDateTime.now());
+
+                        Forum savedForum = forumRepository.save(forum);
+                        log.info("Imagen subida exitosamente al foro {} por usuario: {}. Archivo: {}", id, username,
+                                        fileName);
+                        return mapToResponseDTO(savedForum);
+                } catch (StorageException e) {
+                        log.error("Error al subir imagen al foro {} por usuario {}: {}", id, username, e.getMessage(),
+                                        e);
+                        throw new IllegalArgumentException("Error al subir la imagen: " + e.getMessage(), e);
+                }
         }
 
         @Override
@@ -172,6 +210,34 @@ public class ForumServiceImpl implements ForumService {
                         throw new ResourceNotFoundException("Foro", "id", id);
                 }
                 forumRepository.deleteById(id);
+        }
+
+        @Override
+        @Transactional
+        public ForumResponseDTO updateForumStatus(Long id, String status, Authentication authentication) {
+                Forum forum = forumRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException("Foro", "id", id));
+
+                // Verificar permisos: moderadores y admins pueden cambiar el estado
+                if (!isAdmin(authentication) && !isModerator(authentication)) {
+                        throw new org.springframework.security.access.AccessDeniedException(
+                                        "No tienes permisos para modificar el estado de este foro");
+                }
+
+                // Validar que el status sea válido
+                Forum.ForumStatus newStatus;
+                try {
+                        newStatus = Forum.ForumStatus.valueOf(status.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Estado inválido: " + status +
+                                        ". Valores permitidos: ACTIVE, INACTIVE, ARCHIVED");
+                }
+
+                // Actualizar el estado
+                forum.setStatus(newStatus);
+                forum.setUpdatedAt(LocalDateTime.now());
+                Forum updatedForum = forumRepository.save(forum);
+                return mapToResponseDTO(updatedForum);
         }
 
         private ForumResponseDTO mapToResponseDTO(Forum forum) {
@@ -186,6 +252,22 @@ public class ForumServiceImpl implements ForumService {
                 response.setPostCount((long) forum.getPosts().size());
                 response.setCreatedAt(forum.getCreatedAt().toString());
                 response.setUpdatedAt(forum.getUpdatedAt() != null ? forum.getUpdatedAt().toString() : null);
+
+                // Incluir imagen si existe
+                String imagePath = forum.getImagePath();
+                if (imagePath != null && !imagePath.isEmpty()) {
+                        try {
+                                // Obtener la imagen en formato dataURL
+                                String imageDataUrl = localStorageService.getImage(imagePath);
+                                response.setImagePath(imageDataUrl);
+                        } catch (StorageException e) {
+                                // Si hay un error, usar la ruta normal
+                                response.setImagePath(imagePath);
+                        }
+                } else {
+                        response.setImagePath(null);
+                }
+
                 return response;
         }
 

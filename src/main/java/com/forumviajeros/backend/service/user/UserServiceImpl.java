@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import com.forumviajeros.backend.dto.user.UserRequestDTO;
 import com.forumviajeros.backend.dto.user.UserResponseDTO;
 import com.forumviajeros.backend.model.Role;
 import com.forumviajeros.backend.model.User;
+import com.forumviajeros.backend.model.User.UserStatus;
 import com.forumviajeros.backend.repository.RoleRepository;
 import com.forumviajeros.backend.repository.UserRepository;
 
@@ -128,6 +131,41 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toSet());
 
         user.setRoles(roleSet);
+        User updatedUser = userRepository.save(user);
+        return mapToResponseDTO(updatedUser);
+    }
+
+    @Override
+    public UserResponseDTO updateUserStatus(Long id, String status, Authentication authentication) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Validar que el status sea válido
+        UserStatus newStatus;
+        try {
+            newStatus = UserStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado inválido: " + status +
+                ". Valores permitidos: ACTIVE, INACTIVE, BANNED, DELETED");
+        }
+
+        // Verificar que no se intente banear a un admin (solo otro admin puede hacerlo)
+        boolean targetIsAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+
+        if (targetIsAdmin) {
+            // Si el objetivo es admin, solo otro admin puede cambiar su estado
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin) {
+                throw new AccessDeniedException(
+                    "No tienes permisos para modificar el estado de un administrador");
+            }
+        }
+
+        // Actualizar el estado
+        user.setStatus(newStatus);
         User updatedUser = userRepository.save(user);
         return mapToResponseDTO(updatedUser);
     }
