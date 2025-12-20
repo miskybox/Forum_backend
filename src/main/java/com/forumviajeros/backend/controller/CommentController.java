@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -72,6 +73,7 @@ public class CommentController {
     }
 
     @PostMapping("/post/{postId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Crear nuevo comentario", description = "Crea un nuevo comentario en una publicación específica")
     @ApiResponse(responseCode = "201", description = "Comentario creado exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos de comentario inválidos", content = @Content)
@@ -95,6 +97,7 @@ public class CommentController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Actualizar comentario", description = "Actualiza un comentario existente")
     @ApiResponse(responseCode = "200", description = "Comentario actualizado con éxito")
     @ApiResponse(responseCode = "404", description = "Comentario no encontrado", content = @Content)
@@ -116,6 +119,7 @@ public class CommentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Eliminar comentario", description = "Elimina un comentario por su ID")
     @ApiResponse(responseCode = "204", description = "Comentario eliminado con éxito")
     @ApiResponse(responseCode = "404", description = "Comentario no encontrado", content = @Content)

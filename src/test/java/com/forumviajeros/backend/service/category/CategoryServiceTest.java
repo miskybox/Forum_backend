@@ -197,7 +197,6 @@ class CategoryServiceTest {
         // Arrange
         MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-        when(file.isEmpty()).thenReturn(false);
         when(localStorageService.store(file)).thenReturn("stored-image.jpg");
         when(categoryRepository.save(any(Category.class))).thenReturn(testCategory);
 
@@ -230,7 +229,6 @@ class CategoryServiceTest {
         // Arrange
         MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
-        when(file.isEmpty()).thenReturn(false);
         when(localStorageService.store(file)).thenThrow(new StorageException("Error de almacenamiento"));
 
         // Act & Assert

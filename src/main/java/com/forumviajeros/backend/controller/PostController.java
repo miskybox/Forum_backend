@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -77,6 +78,7 @@ public class PostController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Crear nuevo post", description = "Crea una nueva publicación en un foro")
     @ApiResponse(responseCode = "201", description = "Post creado exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos de post inválidos", content = @Content)
@@ -97,6 +99,7 @@ public class PostController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Actualizar post", description = "Actualiza una publicación existente")
     @ApiResponse(responseCode = "200", description = "Post actualizado con éxito")
     @ApiResponse(responseCode = "404", description = "Post no encontrado", content = @Content)
@@ -117,6 +120,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Eliminar post", description = "Elimina una publicación por su ID")
     @ApiResponse(responseCode = "204", description = "Post eliminado con éxito")
     @ApiResponse(responseCode = "404", description = "Post no encontrado", content = @Content)
@@ -135,6 +139,7 @@ public class PostController {
     }
 
     @PostMapping("/{id}/images")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Subir imágenes a post", description = "Agrega una o más imágenes a una publicación")
     @ApiResponse(responseCode = "200", description = "Imágenes agregadas con éxito")
     @ApiResponse(responseCode = "404", description = "Post no encontrado", content = @Content)
@@ -162,6 +167,7 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}/images/{imageId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Eliminar imagen de post", description = "Elimina una imagen específica de una publicación")
     @ApiResponse(responseCode = "200", description = "Imagen eliminada con éxito")
     @ApiResponse(responseCode = "404", description = "Post o imagen no encontrada", content = @Content)
@@ -182,6 +188,7 @@ public class PostController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener posts del usuario actual", description = "Devuelve todas las publicaciones del usuario autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de posts obtenida con éxito")
     @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content)

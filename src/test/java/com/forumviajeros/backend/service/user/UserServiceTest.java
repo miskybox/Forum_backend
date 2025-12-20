@@ -1,6 +1,5 @@
 package com.forumviajeros.backend.service.user;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -58,6 +58,7 @@ class UserServiceTest {
     private Role moderatorRole;
     private Authentication adminAuth;
     private Authentication moderatorAuth;
+    @SuppressWarnings("unused")
     private Authentication userAuth;
 
     @BeforeEach
@@ -107,7 +108,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> modAuthorities = new ArrayList<>();
         modAuthorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
-        lenient().when(moderatorAuth.getAuthorities()).thenReturn((List) modAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) modAuthorities;
+        lenient().when(moderatorAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -126,7 +129,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -145,7 +150,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
         when(userRepository.save(any(User.class))).thenReturn(adminUser);
@@ -164,7 +171,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> modAuthorities = new ArrayList<>();
         modAuthorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
-        lenient().when(moderatorAuth.getAuthorities()).thenReturn((List) modAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) modAuthorities;
+        lenient().when(moderatorAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
 
@@ -181,7 +190,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
@@ -198,7 +209,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -215,7 +228,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         testUser.setStatus(UserStatus.BANNED);
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
@@ -235,7 +250,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> modAuthorities = new ArrayList<>();
         modAuthorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
-        lenient().when(moderatorAuth.getAuthorities()).thenReturn((List) modAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) modAuthorities;
+        lenient().when(moderatorAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -254,7 +271,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> adminAuthorities = new ArrayList<>();
         adminAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) adminAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) adminAuthorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
@@ -273,7 +292,9 @@ class UserServiceTest {
         // Arrange
         List<GrantedAuthority> modAuthorities = new ArrayList<>();
         modAuthorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
-        lenient().when(moderatorAuth.getAuthorities()).thenReturn((List) modAuthorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) modAuthorities;
+        lenient().when(moderatorAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);

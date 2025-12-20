@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -89,6 +90,7 @@ public class ForumController {
     }
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Crear nuevo foro", description = "Crea un nuevo foro en una categoría específica")
     @ApiResponse(responseCode = "201", description = "Foro creado exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos de foro inválidos", content = @Content)
@@ -109,6 +111,7 @@ public class ForumController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Actualizar foro", description = "Actualiza un foro existente")
     @ApiResponse(responseCode = "200", description = "Foro actualizado con éxito")
     @ApiResponse(responseCode = "404", description = "Foro no encontrado", content = @Content)
@@ -129,6 +132,7 @@ public class ForumController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Eliminar foro", description = "Elimina un foro por su ID")
     @ApiResponse(responseCode = "204", description = "Foro eliminado con éxito")
     @ApiResponse(responseCode = "404", description = "Foro no encontrado", content = @Content)
@@ -147,6 +151,7 @@ public class ForumController {
     }
 
     @PostMapping("/{id}/image")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Subir imagen de foro", description = "Sube una imagen para el foro")
     @ApiResponse(responseCode = "200", description = "Imagen actualizada con éxito")
     @ApiResponse(responseCode = "404", description = "Foro no encontrado", content = @Content)
@@ -175,6 +180,7 @@ public class ForumController {
     }
 
     @GetMapping("/user")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener foros del usuario actual", description = "Devuelve todos los foros creados por el usuario autenticado")
     @ApiResponse(responseCode = "200", description = "Lista de foros obtenida con éxito")
     public ResponseEntity<List<ForumResponseDTO>> getCurrentUserForums(Authentication authentication) {
@@ -182,6 +188,7 @@ public class ForumController {
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
     @Operation(summary = "Actualizar estado del foro", description = "Permite a moderadores/admins cerrar, archivar o reactivar un foro")
     @ApiResponse(responseCode = "200", description = "Estado actualizado con éxito")
     @ApiResponse(responseCode = "404", description = "Foro no encontrado", content = @Content)

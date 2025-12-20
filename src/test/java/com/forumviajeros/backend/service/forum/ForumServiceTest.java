@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -145,7 +146,7 @@ class ForumServiceTest {
     @DisplayName("Crear foro falla cuando el usuario no existe")
     void createForum_ShouldThrowException_WhenUserNotFound() {
         // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        lenient().when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> {
@@ -158,8 +159,8 @@ class ForumServiceTest {
     @DisplayName("Crear foro falla cuando la categoría no existe")
     void createForum_ShouldThrowException_WhenCategoryNotFound() {
         // Arrange
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(categoryRepository.findById(1L)).thenReturn(Optional.empty());
+        lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        lenient().when(categoryRepository.findById(1L)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(ResourceNotFoundException.class, () -> {
@@ -266,7 +267,7 @@ class ForumServiceTest {
     void delete_ShouldSucceed_WhenForumExists() {
         // Arrange
         when(forumRepository.findById(1L)).thenReturn(Optional.of(testForum));
-        when(authentication.getName()).thenReturn("testuser");
+        // authentication ya está configurado en setUp() con username "testuser"
 
         // Act
         forumService.delete(1L, authentication);
@@ -295,7 +296,6 @@ class ForumServiceTest {
         MultipartFile file = org.mockito.Mockito.mock(MultipartFile.class);
         when(forumRepository.findById(1L)).thenReturn(Optional.of(testForum));
         when(file.isEmpty()).thenReturn(false);
-        when(file.getOriginalFilename()).thenReturn("test.jpg");
         when(localStorageService.store(file)).thenReturn("stored-file.jpg");
         when(forumRepository.save(any(Forum.class))).thenReturn(testForum);
 
@@ -359,7 +359,9 @@ class ForumServiceTest {
         Authentication modAuth = org.mockito.Mockito.mock(Authentication.class);
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
-        lenient().when(modAuth.getAuthorities()).thenReturn((List) authorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) authorities;
+        lenient().when(modAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         testForum.setStatus(Forum.ForumStatus.ACTIVE);
         when(forumRepository.findById(1L)).thenReturn(Optional.of(testForum));
@@ -401,7 +403,9 @@ class ForumServiceTest {
         Authentication userAuth = org.mockito.Mockito.mock(Authentication.class);
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-        lenient().when(userAuth.getAuthorities()).thenReturn((List) authorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) authorities;
+        lenient().when(userAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(forumRepository.findById(1L)).thenReturn(Optional.of(testForum));
 
@@ -419,7 +423,9 @@ class ForumServiceTest {
         Authentication adminAuth = org.mockito.Mockito.mock(Authentication.class);
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) authorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) authorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(forumRepository.findById(1L)).thenReturn(Optional.of(testForum));
 
@@ -437,7 +443,9 @@ class ForumServiceTest {
         Authentication adminAuth = org.mockito.Mockito.mock(Authentication.class);
         List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        lenient().when(adminAuth.getAuthorities()).thenReturn((List) authorities);
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) authorities;
+        lenient().when(adminAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
 
         when(forumRepository.findById(99L)).thenReturn(Optional.empty());
 

@@ -226,7 +226,7 @@ class PostServiceTest {
     void updatePost_ShouldSucceed_WhenValidData() {
         // Arrange
         when(postRepository.findById(1L)).thenReturn(Optional.of(testPost));
-        when(authentication.getName()).thenReturn("testuser");
+        // authentication ya está configurado en setUp() con username "testuser"
         when(postRepository.save(any(Post.class))).thenReturn(testPost);
 
         // Act
@@ -242,7 +242,7 @@ class PostServiceTest {
     void delete_ShouldSucceed_WhenPostExists() {
         // Arrange
         when(postRepository.findById(1L)).thenReturn(Optional.of(testPost));
-        when(authentication.getName()).thenReturn("testuser");
+        // authentication ya está configurado en setUp() con username "testuser"
 
         // Act
         postService.delete(1L, authentication);
