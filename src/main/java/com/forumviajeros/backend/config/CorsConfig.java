@@ -24,7 +24,7 @@ public class CorsConfig implements WebMvcConfigurer {
         // Obtener orígenes desde variable de entorno o usar default de desarrollo
         String allowedOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
         if (allowedOrigins == null || allowedOrigins.isBlank()) {
-            allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:5173");
+            allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174");
         }
         
         registry.addMapping("/**")

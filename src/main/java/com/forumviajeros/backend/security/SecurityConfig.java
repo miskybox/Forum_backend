@@ -89,7 +89,7 @@ public class SecurityConfig {
                 // Obtener orígenes permitidos desde variable de entorno o usar default
                 String allowedOrigins = System.getenv("CORS_ALLOWED_ORIGINS");
                 if (allowedOrigins == null || allowedOrigins.isBlank()) {
-                        allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:5173");
+                        allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174");
                 }
                 
                 // Validar que no esté vacío y no sea "*" en producción
