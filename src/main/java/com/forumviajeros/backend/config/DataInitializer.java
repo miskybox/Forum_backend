@@ -74,12 +74,6 @@ public class DataInitializer {
         if (categoryRepository.count() == 0) {
             logger.info("Iniciando creación de categorías...");
 
-            Category general = new Category();
-            general.setName("General");
-            general.setDescription("Discusiones generales sobre viajes");
-            general.setType("GENERAL");
-            categoryRepository.save(general);
-
             Category europe = new Category();
             europe.setName("Europa");
             europe.setDescription("Viajes por Europa");
@@ -92,17 +86,11 @@ public class DataInitializer {
             asia.setType(CONTINENT_TYPE);
             categoryRepository.save(asia);
 
-            Category northAmerica = new Category();
-            northAmerica.setName("América del Norte");
-            northAmerica.setDescription("Viajes por América del Norte");
-            northAmerica.setType(CONTINENT_TYPE);
-            categoryRepository.save(northAmerica);
-
-            Category southAmerica = new Category();
-            southAmerica.setName("América del Sur");
-            southAmerica.setDescription("Viajes por América del Sur");
-            southAmerica.setType(CONTINENT_TYPE);
-            categoryRepository.save(southAmerica);
+            Category america = new Category();
+            america.setName("América");
+            america.setDescription("Viajes por América");
+            america.setType(CONTINENT_TYPE);
+            categoryRepository.save(america);
 
             Category africa = new Category();
             africa.setName("África");
