@@ -149,19 +149,19 @@ public class UserServiceImpl implements UserService {
                 ". Valores permitidos: ACTIVE, INACTIVE, BANNED, DELETED");
         }
 
-        // Verificar que no se intente banear a un admin (solo otro admin puede hacerlo)
+        // Verificar permisos: moderadores NO pueden banear admins/moderadores
         boolean targetIsAdmin = user.getRoles().stream()
                 .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+        boolean targetIsModerator = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ROLE_MODERATOR"));
 
-        if (targetIsAdmin) {
-            // Si el objetivo es admin, solo otro admin puede cambiar su estado
-            boolean isAdmin = authentication.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
-            if (!isAdmin) {
-                throw new AccessDeniedException(
-                    "No tienes permisos para modificar el estado de un administrador");
-            }
+        // Solo admin puede cambiar estado de admin/moderador
+        if ((targetIsAdmin || targetIsModerator) && !isAdmin) {
+            throw new AccessDeniedException(
+                "No tienes permisos para cambiar el estado de este usuario");
         }
 
         // Actualizar el estado

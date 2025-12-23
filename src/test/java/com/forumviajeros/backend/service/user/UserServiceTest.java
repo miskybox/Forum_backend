@@ -306,4 +306,32 @@ class UserServiceTest {
         assertNotNull(result);
         verify(userRepository).save(any(User.class));
     }
+
+    @Test
+    @DisplayName("Moderador NO puede banear otro moderador")
+    void updateUserStatus_ModeratorCannotBanModerator() {
+        // Arrange
+        User moderatorUser = new User();
+        moderatorUser.setId(3L);
+        moderatorUser.setUsername("moderator");
+        moderatorUser.setEmail("mod@example.com");
+        moderatorUser.setStatus(UserStatus.ACTIVE);
+        Set<Role> modRoles = new HashSet<>();
+        modRoles.add(moderatorRole);
+        moderatorUser.setRoles(modRoles);
+
+        List<GrantedAuthority> modAuthorities = new ArrayList<>();
+        modAuthorities.add(new SimpleGrantedAuthority("ROLE_MODERATOR"));
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        Collection<? extends GrantedAuthority> authoritiesCollection = (Collection) modAuthorities;
+        lenient().when(moderatorAuth.getAuthorities()).thenAnswer(invocation -> authoritiesCollection);
+
+        when(userRepository.findById(3L)).thenReturn(Optional.of(moderatorUser));
+
+        // Act & Assert
+        assertThrows(AccessDeniedException.class, () ->
+            userService.updateUserStatus(3L, "BANNED", moderatorAuth)
+        );
+        verify(userRepository, never()).save(any(User.class));
+    }
 }
