@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
 import restCountriesService from '../../services/restCountriesService'
 import toast from 'react-hot-toast'
 
@@ -9,7 +8,6 @@ import toast from 'react-hot-toast'
  * Las preguntas nunca se repiten y son generadas dinámicamente
  */
 const TriviaInfinitePage = () => {
-  const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   
   const [questions, setQuestions] = useState([])
