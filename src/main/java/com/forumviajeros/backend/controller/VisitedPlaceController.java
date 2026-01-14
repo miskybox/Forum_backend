@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,6 +51,7 @@ public class VisitedPlaceController {
     private final UserRepository userRepository;
 
     @PostMapping("/places")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Agregar un lugar visitado", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<VisitedPlaceResponseDTO> addPlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -60,6 +62,7 @@ public class VisitedPlaceController {
     }
 
     @PutMapping("/places/{placeId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Actualizar un lugar visitado", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<VisitedPlaceResponseDTO> updatePlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -70,6 +73,7 @@ public class VisitedPlaceController {
     }
 
     @DeleteMapping("/places/{placeId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Eliminar un lugar visitado", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> deletePlace(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -86,6 +90,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-places")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mis lugares visitados", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<VisitedPlaceResponseDTO>> getMyPlaces(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -94,6 +99,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-places/paginated")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mis lugares con paginación", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Page<VisitedPlaceResponseDTO>> getMyPlacesPaginated(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -110,6 +116,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-places/status/{status}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener lugares por estado", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<VisitedPlaceResponseDTO>> getMyPlacesByStatus(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -119,6 +126,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-places/favorites")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mis lugares favoritos", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<VisitedPlaceResponseDTO>> getMyFavorites(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -127,6 +135,7 @@ public class VisitedPlaceController {
     }
 
     @PatchMapping("/places/{placeId}/favorite")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Marcar/desmarcar como favorito", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<VisitedPlaceResponseDTO> toggleFavorite(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -136,6 +145,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-stats")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mis estadísticas de viaje", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TravelStatsDTO> getMyStats(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -144,6 +154,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/users/{userId}/stats")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener estadísticas de un usuario", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TravelStatsDTO> getUserStats(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -173,6 +184,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/my-ranking")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mi posición en el ranking", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Integer> getMyRanking(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -181,6 +193,7 @@ public class VisitedPlaceController {
     }
 
     @GetMapping("/check/{countryId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Verificar si he visitado un país", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Boolean> hasVisitedCountry(
             @AuthenticationPrincipal UserDetails userDetails,

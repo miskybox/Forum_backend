@@ -77,6 +77,17 @@ Los servicios implementan correctamente la verificación de permisos:
 - ✅ `POST /api/tags` - `@PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")`
 - ✅ `PUT /api/tags/{id}` - `@PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")`
 
+### 4. Endpoints de Mapa de Viajes y Trivia sin `@PreAuthorize`
+
+**Problema**: Los controladores `VisitedPlaceController` y `TriviaController` dependían solo de la configuración global de seguridad y de parámetros `@AuthenticationPrincipal`, pero no tenían anotaciones `@PreAuthorize`. Esto permitía que solicitudes sin token llegaran al método, provocando `NullPointerException` o respuestas 500 antes de que Spring Security rechazara la petición.
+
+**Impacto**: Alto - Exposición de endpoints sensibles (crear/actualizar lugares y partidas) a accesos no autenticados y potencial revelación de información sensible a través de mensajes de error.
+
+**Correcciones Aplicadas**:
+- ✅ `POST /api/travel/places`, `PUT /api/travel/places/{placeId}`, `DELETE /api/travel/places/{placeId}` - agregado `@PreAuthorize("isAuthenticated()")`
+- ✅ Endpoints `/api/travel/my-*`, `/api/travel/places/{placeId}/favorite`, `/api/travel/users/{userId}/stats`, `/api/travel/check/{countryId}` - agregado `@PreAuthorize("isAuthenticated()")`
+- ✅ Endpoints `/api/trivia/games*`, `/api/trivia/my-*`, `/api/trivia/users/{userId}/score` - agregado `@PreAuthorize("isAuthenticated()")`
+
 ## Matriz de Permisos
 
 | Endpoint | USER | MODERATOR | ADMIN | Público |

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,6 +51,7 @@ public class TriviaController {
     // === PARTIDAS ===
 
     @PostMapping("/games")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Iniciar nueva partida", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaGameResponseDTO> startGame(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -60,6 +62,7 @@ public class TriviaController {
     }
 
     @GetMapping("/games/{gameId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener estado de partida", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaGameResponseDTO> getGameStatus(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -69,6 +72,7 @@ public class TriviaController {
     }
 
     @GetMapping("/games/{gameId}/question")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener siguiente pregunta", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaQuestionDTO> getNextQuestion(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -78,6 +82,7 @@ public class TriviaController {
     }
 
     @PostMapping("/games/answer")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Responder pregunta", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaAnswerResponseDTO> answerQuestion(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -87,6 +92,7 @@ public class TriviaController {
     }
 
     @PostMapping("/games/{gameId}/finish")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Finalizar partida", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaGameResponseDTO> finishGame(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -96,6 +102,7 @@ public class TriviaController {
     }
 
     @DeleteMapping("/games/{gameId}")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Abandonar partida", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Void> abandonGame(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -106,6 +113,7 @@ public class TriviaController {
     }
 
     @GetMapping("/my-games")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener historial de partidas", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<List<TriviaGameResponseDTO>> getMyGameHistory(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -119,6 +127,7 @@ public class TriviaController {
     // === PUNTUACIONES ===
 
     @GetMapping("/my-score")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mis estadísticas", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaScoreDTO> getMyScore(
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -127,6 +136,7 @@ public class TriviaController {
     }
 
     @GetMapping("/users/{userId}/score")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener estadísticas de un usuario", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<TriviaScoreDTO> getUserScore(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -152,6 +162,7 @@ public class TriviaController {
     }
 
     @GetMapping("/my-rank")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener mi posición en el ranking", security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<Integer> getMyRank(
             @AuthenticationPrincipal UserDetails userDetails) {
