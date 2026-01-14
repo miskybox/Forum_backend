@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.forumviajeros.backend.model.Image;
 import com.forumviajeros.backend.model.Post;
 import com.forumviajeros.backend.repository.ImageRepository;
+import com.forumviajeros.backend.util.ImageValidator;
 
 @Service
 public class LocalStorageService implements StorageService {
@@ -167,10 +168,15 @@ public class LocalStorageService implements StorageService {
     }
 
     private void validateContentType(MultipartFile file) {
+        // First, validate MIME type (basic check)
         String contentType = file.getContentType();
         if (contentType == null || !CONTENT_TYPE_EXTENSION.containsKey(contentType)) {
             throw new StorageException("Tipo de archivo no permitido: " + contentType);
         }
+
+        // Second, validate actual file content using magic bytes (security check)
+        // This prevents uploading malicious files with spoofed extensions/MIME types
+        ImageValidator.validateImageFile(file);
     }
 
     private String resolveExtension(MultipartFile file, String originalFilename) {
