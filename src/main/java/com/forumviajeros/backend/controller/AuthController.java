@@ -57,13 +57,15 @@ public class AuthController {
             // Para errores de validación o usuario existente
             logger.warn("Error de validación en registro: {}", e.getMessage());
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", e.getMessage());
+            // Generic message to avoid user enumeration
+            errorResponse.put("message", "Los datos proporcionados no son válidos. Por favor, verifica e intenta nuevamente.");
             return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             // Log detallado para cualquier otra excepción
             logger.error("Error interno al registrar usuario: {}", e.getMessage(), e);
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error al procesar el registro: " + e.getMessage());
+            // Generic error message without exposing internal details
+            errorResponse.put("message", "Error al procesar el registro. Por favor, intenta nuevamente más tarde.");
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(errorResponse);
@@ -81,9 +83,11 @@ public class AuthController {
             logger.info("Inicio de sesión exitoso para: {}", authRequestDTO.getUsername());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error en inicio de sesión: {}", e.getMessage());
+            logger.error("Error en inicio de sesión para usuario: {}", authRequestDTO.getUsername());
+            // Don't log the actual error message to avoid information leakage
             Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Error de autenticación: " + e.getMessage());
+            // Generic message to prevent username enumeration
+            errorResponse.put("message", "Credenciales inválidas. Por favor, verifica tu usuario y contraseña.");
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(errorResponse);

@@ -66,9 +66,10 @@ public class GlobalExceptionHandler {
     // Maneja errores de autenticación de Spring Security (401 Unauthorized)
     @ExceptionHandler({ BadCredentialsException.class, AuthenticationException.class })
     public ResponseEntity<ErrorDetails> handleAuthenticationException(Exception exception, WebRequest webRequest) {
+        // Generic message to avoid leaking information about valid usernames
         ErrorDetails errorDetails = new ErrorDetails(
                 new Date(),
-                "Error de autenticación: " + exception.getMessage(),
+                "Credenciales inválidas. Por favor, verifica tu usuario y contraseña.",
                 webRequest.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.UNAUTHORIZED);
     }
@@ -88,9 +89,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception exception,
             WebRequest webRequest) {
+        // Log the actual exception for debugging (add logger if needed)
+        // logger.error("Internal server error", exception);
+
+        // Generic message to avoid exposing internal details
         ErrorDetails errorDetails = new ErrorDetails(
                 new Date(),
-                exception.getMessage(),
+                "Ha ocurrido un error interno. Por favor, intenta nuevamente más tarde.",
                 webRequest.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
