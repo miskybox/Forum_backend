@@ -16,8 +16,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -42,16 +40,11 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationConfiguration authConfig)
                         throws Exception {
-                // CSRF configuration for cookie-based authentication
-                CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-                requestHandler.setCsrfRequestAttributeName("_csrf");
-
+                // CSRF is disabled for REST API with HttpOnly cookies + SameSite protection
+                // SameSite=Lax cookies already prevent CSRF attacks from cross-origin requests
+                // This is the recommended approach for stateless JWT APIs with cookie storage
                 return http
-                                .csrf(csrf -> csrf
-                                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                                        .csrfTokenRequestHandler(requestHandler)
-                                        // Ignore CSRF for auth endpoints (login, register) - they don't need session
-                                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh"))
+                                .csrf(csrf -> csrf.disable())
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .headers(headers -> headers
                                                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
