@@ -98,7 +98,17 @@ public class AuthServiceImpl implements AuthService {
             optionalUser = userRepository.findByEmail(dto.getUsername());
         }
 
-        if (optionalUser.isEmpty() || !passwordEncoder.matches(dto.getPassword(), optionalUser.get().getPassword())) {
+        if (optionalUser.isEmpty()) {
+            logger.warn("Usuario no encontrado: {}", dto.getUsername());
+            throw new BadCredentialsException("Credenciales inválidas");
+        }
+
+        User foundUser = optionalUser.get();
+        boolean passwordMatches = passwordEncoder.matches(dto.getPassword(), foundUser.getPassword());
+        logger.info("Usuario encontrado: {}, Password match: {}", foundUser.getUsername(), passwordMatches);
+
+        if (!passwordMatches) {
+            logger.warn("Contraseña incorrecta para usuario: {}", dto.getUsername());
             throw new BadCredentialsException("Credenciales inválidas");
         }
 

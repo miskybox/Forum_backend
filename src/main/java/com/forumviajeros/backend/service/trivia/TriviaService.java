@@ -28,6 +28,11 @@ public interface TriviaService {
     TriviaGameResponseDTO getGameStatus(Long gameId, Long userId);
 
     /**
+     * Obtiene la partida activa del usuario (si existe)
+     */
+    TriviaGameResponseDTO getActiveGame(Long userId);
+
+    /**
      * Obtiene la siguiente pregunta de una partida
      */
     TriviaQuestionDTO getNextQuestion(Long gameId, Long userId);

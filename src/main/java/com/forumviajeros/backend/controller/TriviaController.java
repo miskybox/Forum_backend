@@ -61,6 +61,19 @@ public class TriviaController {
                 .body(triviaService.startGame(userId, request));
     }
 
+    @GetMapping("/games/active")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Obtener partida activa del usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    public ResponseEntity<TriviaGameResponseDTO> getActiveGame(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = getUserId(userDetails);
+        TriviaGameResponseDTO activeGame = triviaService.getActiveGame(userId);
+        if (activeGame == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(activeGame);
+    }
+
     @GetMapping("/games/{gameId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Obtener estado de partida", security = @SecurityRequirement(name = "bearerAuth"))

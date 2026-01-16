@@ -103,6 +103,14 @@ public class TriviaServiceImpl implements TriviaService {
 
     @Override
     @Transactional(readOnly = true)
+    public TriviaGameResponseDTO getActiveGame(Long userId) {
+        return gameRepository.findByUserIdAndStatus(userId, GameStatus.IN_PROGRESS)
+                .map(game -> toGameResponseDTO(game, null))
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TriviaQuestionDTO getNextQuestion(Long gameId, Long userId) {
         TriviaGame game = findGameById(gameId);
         validateGameOwnership(game, userId);
