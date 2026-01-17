@@ -102,10 +102,11 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
 
           {/* Ciudad (opcional) */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label htmlFor="cityName" className="block text-sm font-semibold text-slate-700 mb-2">
               Ciudad (opcional)
             </label>
             <input
+              id="cityName"
               type="text"
               value={formData.cityName}
               onChange={(e) => setFormData({ ...formData, cityName: e.target.value })}
@@ -119,19 +120,21 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
             <label className="block text-sm font-semibold text-slate-700 mb-2">
               Estado
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {statusOptions.map(option => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, status: option.value })}
-                  className={`px-4 py-3 rounded-xl border-2 transition-all ${
+                  className={`px-4 py-4 rounded-xl border-2 transition-all cursor-pointer ${
                     formData.status === option.value
-                      ? `${option.color} border-transparent text-white`
-                      : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      ? `${option.color} border-transparent text-white shadow-md transform scale-[1.02]`
+                      : 'border-slate-200 text-slate-600 bg-white hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-sm hover:scale-[1.01]'
                   }`}
                 >
-                  {option.label}
+                  <span className="flex items-center justify-center gap-2 font-medium">
+                    {option.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -139,10 +142,11 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
 
           {/* Fecha de visita */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label htmlFor="visitDate" className="block text-sm font-semibold text-slate-700 mb-2">
               Fecha de visita
             </label>
             <input
+              id="visitDate"
               type="date"
               value={formData.visitDate}
               onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
@@ -151,11 +155,11 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
           </div>
 
           {/* Rating */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+          <fieldset className="border-0 p-0 m-0">
+            <legend className="block text-sm font-semibold text-slate-700 mb-2">
               Puntuación
-            </label>
-            <div className="flex gap-2">
+            </legend>
+            <div className="flex gap-2" role="group" aria-label="Seleccionar puntuación">
               {[1, 2, 3, 4, 5].map(star => (
                 <button
                   key={star}
@@ -178,14 +182,15 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
                 </button>
               )}
             </div>
-          </div>
+          </fieldset>
 
           {/* Notas */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label htmlFor="notes" className="block text-sm font-semibold text-slate-700 mb-2">
               Notas
             </label>
             <textarea
+              id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="¿Qué te pareció? ¿Algún lugar especial?"
@@ -195,29 +200,34 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
           </div>
 
           {/* Favorito */}
-          <label className="flex items-center gap-3 cursor-pointer">
+          <div className="flex items-center gap-3 cursor-pointer">
             <input
+              id="favorite"
               type="checkbox"
               checked={formData.favorite}
               onChange={(e) => setFormData({ ...formData, favorite: e.target.checked })}
               className="w-5 h-5 rounded border-slate-300 text-rose-500 focus:ring-rose-400"
             />
-            <span className="text-slate-700">❤️ Marcar como lugar favorito</span>
-          </label>
+            <label htmlFor="favorite" className="text-slate-700 cursor-pointer">❤️ Marcar como lugar favorito</label>
+          </div>
 
-          {/* Botones */}
-          <div className="flex gap-3 pt-4">
+          {/* Botones - Siempre visibles */}
+          <div className="flex gap-3 pt-6 sticky bottom-0 bg-white border-t border-slate-200 -mx-6 px-6 pb-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+              className="flex-1 px-6 py-4 border-2 border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 hover:border-slate-300 transition-all cursor-pointer font-medium"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading || !selectedCountry}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`flex-1 px-6 py-4 rounded-xl transition-all font-bold ${
+                loading || !selectedCountry
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 hover:shadow-lg cursor-pointer shadow-md'
+              }`}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -225,7 +235,10 @@ const AddPlaceModal = ({ isOpen, onClose, onSuccess, editPlace = null }) => {
                   Guardando...
                 </span>
               ) : (
-                editPlace ? 'Actualizar' : 'Agregar al mapa'
+                <span className="flex items-center justify-center gap-2">
+                  <span>➕</span>
+                  <span>{editPlace ? 'Actualizar' : 'Añadir al mapa'}</span>
+                </span>
               )}
             </button>
           </div>
