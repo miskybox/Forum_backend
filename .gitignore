@@ -35,3 +35,6 @@ build/
 
 # Claude Code configuration
 .claude/
+
+# Archivos temporales Claude
+tmpclaude-*
