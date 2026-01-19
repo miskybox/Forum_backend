@@ -53,6 +53,13 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = convertToEntity(userDTO);
+
+        // Si es moderador, validar longitud mínima de contraseña
+        boolean isModerator = roles.stream().anyMatch(r -> r.equalsIgnoreCase("MODERATOR") || r.equalsIgnoreCase("ROLE_MODERATOR"));
+        if (isModerator && (userDTO.getPassword() == null || userDTO.getPassword().length() < 8)) {
+            throw new RuntimeException("La contraseña de moderador debe tener al menos 8 caracteres");
+        }
+
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         Set<Role> roleSet = roles.stream()
@@ -109,6 +116,12 @@ public class UserServiceImpl implements UserService {
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new RuntimeException("Contraseña actual incorrecta");
+        }
+
+        // Si es moderador, validar longitud mínima de contraseña
+        boolean isModerator = user.getRoles().stream().anyMatch(role -> role.getName().equals("ROLE_MODERATOR"));
+        if (isModerator && (newPassword == null || newPassword.length() < 8)) {
+            throw new RuntimeException("La contraseña de moderador debe tener al menos 8 caracteres");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
