@@ -150,4 +150,29 @@ public class CommentServiceImpl implements CommentService {
                 comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null,
                 comment.getUpdatedAt() != null ? comment.getUpdatedAt().toString() : null);
     }
+
+    @Override
+    public CommentResponseDTO updateCommentStatus(Long id, String status, Authentication authentication) {
+        if (!isAdmin(authentication) && !isModerator(authentication)) {
+            throw new AccessDeniedException("Solo administradores y moderadores pueden cambiar el estado de comentarios");
+        }
+
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", id));
+
+        try {
+            Comment.CommentStatus newStatus = Comment.CommentStatus.valueOf(status.toUpperCase());
+            
+            // Moderadores solo pueden ocultar (HIDDEN), no eliminar (DELETED)
+            if (isModerator(authentication) && !isAdmin(authentication) && newStatus == Comment.CommentStatus.DELETED) {
+                throw new AccessDeniedException("Los moderadores no pueden eliminar comentarios, solo ocultarlos");
+            }
+            
+            comment.setStatus(newStatus);
+            Comment updatedComment = commentRepository.save(comment);
+            return mapToResponseDTO(updatedComment);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado inválido: " + status + ". Estados válidos: ACTIVE, EDITED, DELETED, HIDDEN");
+        }
+    }
 }

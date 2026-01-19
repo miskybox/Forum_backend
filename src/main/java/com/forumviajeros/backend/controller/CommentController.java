@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.forumviajeros.backend.dto.comment.CommentRequestDTO;
@@ -133,6 +134,28 @@ public class CommentController {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             log.warn("Error al eliminar comentario {} por usuario {}: {}", id, username, e.getMessage());
+            throw e;
+        }
+    }
+
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
+    @Operation(summary = "Actualizar estado del comentario", description = "Permite a moderadores/admins ocultar o reactivar un comentario")
+    @ApiResponse(responseCode = "200", description = "Estado actualizado con éxito")
+    @ApiResponse(responseCode = "404", description = "Comentario no encontrado", content = @Content)
+    @ApiResponse(responseCode = "403", description = "No autorizado para modificar este comentario", content = @Content)
+    public ResponseEntity<CommentResponseDTO> updateCommentStatus(
+            @PathVariable Long id,
+            @RequestParam String status,
+            Authentication authentication) {
+        String username = authentication.getName();
+        log.info("Usuario {} cambiando estado del comentario {} a: {}", username, id, status);
+        try {
+            CommentResponseDTO comment = commentService.updateCommentStatus(id, status, authentication);
+            log.info("Estado del comentario {} actualizado a {} por: {}", id, status, username);
+            return ResponseEntity.ok(comment);
+        } catch (Exception e) {
+            log.warn("Error al cambiar estado del comentario {} por {}: {}", id, username, e.getMessage());
             throw e;
         }
     }

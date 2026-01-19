@@ -89,11 +89,11 @@ public class BackendApplication {
 			hasErrors = true;
 		}
 		
-		// Validar DB_PASSWORD
+		// Validar DB_PASSWORD - puede ser vacía para desarrollo local
 		String dbPassword = dotenv.get(DB_PASSWORD);
-		if (dbPassword == null || dbPassword.isBlank()) {
-			errors.append("\n  - DB_PASSWORD: Requerida");
-			hasErrors = true;
+		// DB_PASSWORD es opcional - puede estar vacía para bases de datos sin contraseña
+		if (dbPassword == null) {
+			LOGGER.info("⚠️ DB_PASSWORD no está configurada - usando conexión sin contraseña");
 		}
 		
 		// Validar JWT_SECRET_KEY

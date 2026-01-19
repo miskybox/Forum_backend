@@ -73,7 +73,7 @@ public class Forum {
     private String imagePath;
 
     public enum ForumStatus {
-        ACTIVE, INACTIVE, ARCHIVED
+        ACTIVE, INACTIVE, ARCHIVED, HIDDEN
     }
 
     @PrePersist
