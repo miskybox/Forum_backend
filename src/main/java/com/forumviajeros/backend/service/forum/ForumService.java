@@ -14,7 +14,7 @@ import com.forumviajeros.backend.dto.forum.ForumResponseDTO;
 public interface ForumService {
     ForumResponseDTO createForum(ForumRequestDTO forumDTO, Long userId);
 
-    ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO);
+    ForumResponseDTO updateForum(Long id, ForumRequestDTO forumDTO, Authentication authentication);
 
     ForumResponseDTO getForum(Long id);
 
@@ -37,4 +37,6 @@ public interface ForumService {
     ForumResponseDTO updateImage(Long id, MultipartFile file, Authentication authentication);
 
     void deleteForum(Long id);
+
+    ForumResponseDTO updateForumStatus(Long id, String status, Authentication authentication);
 }

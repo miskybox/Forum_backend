@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import com.forumviajeros.backend.dto.user.UserRequestDTO;
 import com.forumviajeros.backend.dto.user.UserResponseDTO;
 import com.forumviajeros.backend.model.Role;
 import com.forumviajeros.backend.model.User;
+import com.forumviajeros.backend.model.User.UserStatus;
 import com.forumviajeros.backend.repository.RoleRepository;
 import com.forumviajeros.backend.repository.UserRepository;
 
@@ -50,6 +53,13 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = convertToEntity(userDTO);
+
+        // Si es moderador, validar longitud mínima de contraseña
+        boolean isModerator = roles.stream().anyMatch(r -> r.equalsIgnoreCase("MODERATOR") || r.equalsIgnoreCase("ROLE_MODERATOR"));
+        if (isModerator && (userDTO.getPassword() == null || userDTO.getPassword().length() < 8)) {
+            throw new RuntimeException("La contraseña de moderador debe tener al menos 8 caracteres");
+        }
+
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
         Set<Role> roleSet = roles.stream()
@@ -108,7 +118,67 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Contraseña actual incorrecta");
         }
 
+        // Si es moderador, validar longitud mínima de contraseña
+        boolean isModerator = user.getRoles().stream().anyMatch(role -> role.getName().equals("ROLE_MODERATOR"));
+        if (isModerator && (newPassword == null || newPassword.length() < 8)) {
+            throw new RuntimeException("La contraseña de moderador debe tener al menos 8 caracteres");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
+        User updatedUser = userRepository.save(user);
+        return mapToResponseDTO(updatedUser);
+    }
+
+    @Override
+    public UserResponseDTO updateUserRoles(Long id, Set<String> roles) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Set<Role> roleSet = roles.stream()
+                .map(roleName -> {
+                    // Aceptar roles con o sin prefijo ROLE_
+                    String roleNameWithPrefix = roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
+                    return roleRepository.findByName(roleNameWithPrefix)
+                            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName));
+                })
+                .collect(Collectors.toSet());
+
+        user.setRoles(roleSet);
+        User updatedUser = userRepository.save(user);
+        return mapToResponseDTO(updatedUser);
+    }
+
+    @Override
+    public UserResponseDTO updateUserStatus(Long id, String status, Authentication authentication) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Validar que el status sea válido
+        UserStatus newStatus;
+        try {
+            newStatus = UserStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado inválido: " + status +
+                ". Valores permitidos: ACTIVE, INACTIVE, BANNED, DELETED");
+        }
+
+        // Verificar permisos: moderadores NO pueden banear admins/moderadores
+        boolean targetIsAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ROLE_ADMIN"));
+        boolean targetIsModerator = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ROLE_MODERATOR"));
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+
+        // Solo admin puede cambiar estado de admin/moderador
+        if ((targetIsAdmin || targetIsModerator) && !isAdmin) {
+            throw new AccessDeniedException(
+                "No tienes permisos para cambiar el estado de este usuario");
+        }
+
+        // Actualizar el estado
+        user.setStatus(newStatus);
         User updatedUser = userRepository.save(user);
         return mapToResponseDTO(updatedUser);
     }

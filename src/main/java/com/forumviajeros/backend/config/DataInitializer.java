@@ -30,6 +30,7 @@ public class DataInitializer {
     private void initRoles(RoleRepository roleRepository) {
         logger.info("Iniciando creación de roles...");
 
+        // Crear ROLE_USER (Usuario Registrado)
         if (roleRepository.findByName("ROLE_USER").isEmpty()) {
             logger.info("Creando rol ROLE_USER");
             Role userRole = new Role();
@@ -41,11 +42,24 @@ public class DataInitializer {
             logger.info("Rol ROLE_USER ya existe, no es necesario crearlo");
         }
 
+        // Crear ROLE_MODERATOR (Moderador)
+        if (roleRepository.findByName("ROLE_MODERATOR").isEmpty()) {
+            logger.info("Creando rol ROLE_MODERATOR");
+            Role moderatorRole = new Role();
+            moderatorRole.setName("ROLE_MODERATOR");
+            moderatorRole.setDescription("Rol para moderadores del foro");
+            roleRepository.save(moderatorRole);
+            logger.info("Rol ROLE_MODERATOR creado exitosamente");
+        } else {
+            logger.info("Rol ROLE_MODERATOR ya existe, no es necesario crearlo");
+        }
+
+        // Crear ROLE_ADMIN (Administrador)
         if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
             logger.info("Creando rol ROLE_ADMIN");
             Role adminRole = new Role();
             adminRole.setName("ROLE_ADMIN");
-            adminRole.setDescription("Rol para administradores");
+            adminRole.setDescription("Rol para administradores del sistema");
             roleRepository.save(adminRole);
             logger.info("Rol ROLE_ADMIN creado exitosamente");
         } else {
@@ -60,12 +74,6 @@ public class DataInitializer {
         if (categoryRepository.count() == 0) {
             logger.info("Iniciando creación de categorías...");
 
-            Category general = new Category();
-            general.setName("General");
-            general.setDescription("Discusiones generales sobre viajes");
-            general.setType("GENERAL");
-            categoryRepository.save(general);
-
             Category europe = new Category();
             europe.setName("Europa");
             europe.setDescription("Viajes por Europa");
@@ -78,17 +86,11 @@ public class DataInitializer {
             asia.setType(CONTINENT_TYPE);
             categoryRepository.save(asia);
 
-            Category northAmerica = new Category();
-            northAmerica.setName("América del Norte");
-            northAmerica.setDescription("Viajes por América del Norte");
-            northAmerica.setType(CONTINENT_TYPE);
-            categoryRepository.save(northAmerica);
-
-            Category southAmerica = new Category();
-            southAmerica.setName("América del Sur");
-            southAmerica.setDescription("Viajes por América del Sur");
-            southAmerica.setType(CONTINENT_TYPE);
-            categoryRepository.save(southAmerica);
+            Category america = new Category();
+            america.setName("América");
+            america.setDescription("Viajes por América");
+            america.setType(CONTINENT_TYPE);
+            categoryRepository.save(america);
 
             Category africa = new Category();
             africa.setName("África");

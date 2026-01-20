@@ -13,7 +13,7 @@ import com.forumviajeros.backend.dto.post.PostResponseDTO;
 public interface PostService {
     PostResponseDTO createPost(PostRequestDTO postDTO, Long userId);
 
-    PostResponseDTO updatePost(Long id, PostRequestDTO postDTO);
+    PostResponseDTO updatePost(Long id, PostRequestDTO postDTO, Authentication authentication);
 
     PostResponseDTO findById(Long id);
 

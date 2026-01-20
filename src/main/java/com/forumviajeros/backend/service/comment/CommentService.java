@@ -19,4 +19,6 @@ public interface CommentService {
     List<CommentResponseDTO> getCommentsByPost(Long postId);
 
     void deleteComment(Long id, Authentication authentication);
+
+    CommentResponseDTO updateCommentStatus(Long id, String status, Authentication authentication);
 }

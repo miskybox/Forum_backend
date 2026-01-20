@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.forumviajeros.backend.dto.category.CategoryRequestDTO;
 import com.forumviajeros.backend.dto.category.CategoryResponseDTO;
+import com.forumviajeros.backend.exception.ResourceNotFoundException;
 import com.forumviajeros.backend.service.category.CategoryService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,10 +27,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Categories", description = "API para gestión de categorías por continentes")
 public class CategoryController {
 
@@ -47,7 +50,12 @@ public class CategoryController {
     @ApiResponse(responseCode = "200", description = "Categoría encontrada con éxito")
     @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content)
     public ResponseEntity<CategoryResponseDTO> getCategoryById(@PathVariable Long id) {
-        return ResponseEntity.ok(categoryService.findById(id));
+        try {
+            return ResponseEntity.ok(categoryService.findById(id));
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            log.warn("Categoría no encontrada con id: {}", id);
+            throw new ResourceNotFoundException("Categoría", "id", id);
+        }
     }
 
     @PostMapping
@@ -84,8 +92,20 @@ public class CategoryController {
     @Operation(summary = "Subir imagen de categoría", description = "Sube una imagen para la categoría")
     @ApiResponse(responseCode = "200", description = "Imagen actualizada con éxito")
     @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content)
+    @ApiResponse(responseCode = "400", description = "Archivo inválido o error al procesar", content = @Content)
     public ResponseEntity<CategoryResponseDTO> uploadCategoryImage(@PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(categoryService.updateImage(id, file));
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("El archivo no puede estar vacío");
+            }
+            return ResponseEntity.ok(categoryService.updateImage(id, file));
+        } catch (jakarta.persistence.EntityNotFoundException e) {
+            log.warn("Categoría no encontrada con id: {}", id);
+            throw new ResourceNotFoundException("Categoría", "id", id);
+        } catch (IllegalArgumentException e) {
+            log.warn("Error de validación al subir imagen: {}", e.getMessage());
+            throw e;
+        }
     }
 }

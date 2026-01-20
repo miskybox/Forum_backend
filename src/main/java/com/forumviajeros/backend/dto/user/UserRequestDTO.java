@@ -31,7 +31,7 @@ public class UserRequestDTO {
     @Size(max = 100, message = "La ubicación no puede exceder los 100 caracteres")
     private String location;
 
-    @Size(min = 6, max = 40, message = "La contraseña debe tener entre 6 y 40 caracteres")
+    @com.forumviajeros.backend.validation.ValidPassword
     private String password;
 
     public boolean isLoginRequest() {

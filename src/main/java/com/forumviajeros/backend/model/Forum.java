@@ -18,6 +18,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -67,7 +69,31 @@ public class Forum {
     @Column(name = "view_count", nullable = false)
     private Long viewCount = 0L;
 
+    @Column(name = "image_path")
+    private String imagePath;
+
     public enum ForumStatus {
-        ACTIVE, INACTIVE, ARCHIVED
+        ACTIVE, INACTIVE, ARCHIVED, HIDDEN
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+        if (this.viewCount == null) {
+            this.viewCount = 0L;
+        }
+        if (this.status == null) {
+            this.status = ForumStatus.ACTIVE;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }

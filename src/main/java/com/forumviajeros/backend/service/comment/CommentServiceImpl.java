@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import com.forumviajeros.backend.dto.comment.CommentRequestDTO;
@@ -16,6 +17,7 @@ import com.forumviajeros.backend.model.User;
 import com.forumviajeros.backend.repository.CommentRepository;
 import com.forumviajeros.backend.repository.PostRepository;
 import com.forumviajeros.backend.repository.UserRepository;
+import com.forumviajeros.backend.util.HtmlSanitizer;
 
 @Service
 public class CommentServiceImpl implements CommentService {
@@ -41,7 +43,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Publicación", "id", postId));
 
         Comment comment = new Comment();
-        comment.setContent(commentRequestDTO.getContent());
+        comment.setContent(HtmlSanitizer.sanitizeRichText(commentRequestDTO.getContent()));
         comment.setUser(user);
         comment.setPost(post);
         comment.setStatus(Comment.CommentStatus.ACTIVE);
@@ -58,11 +60,11 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", commentId));
 
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(user.getId()) && !isAdmin(authentication) && !isModerator(authentication)) {
             throw new AccessDeniedException("No tienes permisos para editar este comentario");
         }
 
-        comment.setContent(commentRequestDTO.getContent());
+        comment.setContent(HtmlSanitizer.sanitizeRichText(commentRequestDTO.getContent()));
         comment.setStatus(Comment.CommentStatus.EDITED);
 
         Comment updatedComment = commentRepository.save(comment);
@@ -101,7 +103,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", id));
 
-        if (!comment.getUser().getId().equals(user.getId())) {
+        if (!comment.getUser().getId().equals(user.getId()) && !isAdmin(authentication) && !isModerator(authentication)) {
             throw new AccessDeniedException("No tienes permisos para eliminar este comentario");
         }
 
@@ -118,6 +120,24 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario", "username", username));
     }
 
+    private boolean isAdmin(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_ADMIN"));
+    }
+
+    private boolean isModerator(Authentication authentication) {
+        if (authentication == null) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority.equals("ROLE_MODERATOR"));
+    }
+
     private CommentResponseDTO mapToResponseDTO(Comment comment) {
         return new CommentResponseDTO(
                 comment.getId(),
@@ -127,7 +147,32 @@ public class CommentServiceImpl implements CommentService {
                 comment.getUser().getUsername(),
                 comment.getUser().getProfileImageUrl(),
                 comment.getStatus().name(),
-                comment.getCreatedAt().toString(),
-                comment.getUpdatedAt().toString());
+                comment.getCreatedAt() != null ? comment.getCreatedAt().toString() : null,
+                comment.getUpdatedAt() != null ? comment.getUpdatedAt().toString() : null);
+    }
+
+    @Override
+    public CommentResponseDTO updateCommentStatus(Long id, String status, Authentication authentication) {
+        if (!isAdmin(authentication) && !isModerator(authentication)) {
+            throw new AccessDeniedException("Solo administradores y moderadores pueden cambiar el estado de comentarios");
+        }
+
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Comentario", "id", id));
+
+        try {
+            Comment.CommentStatus newStatus = Comment.CommentStatus.valueOf(status.toUpperCase());
+            
+            // Moderadores solo pueden ocultar (HIDDEN), no eliminar (DELETED)
+            if (isModerator(authentication) && !isAdmin(authentication) && newStatus == Comment.CommentStatus.DELETED) {
+                throw new AccessDeniedException("Los moderadores no pueden eliminar comentarios, solo ocultarlos");
+            }
+            
+            comment.setStatus(newStatus);
+            Comment updatedComment = commentRepository.save(comment);
+            return mapToResponseDTO(updatedComment);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado inválido: " + status + ". Estados válidos: ACTIVE, EDITED, DELETED, HIDDEN");
+        }
     }
 }

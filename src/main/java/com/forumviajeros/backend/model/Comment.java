@@ -43,6 +43,6 @@ public class Comment extends Auditable {
     private User user;
 
     public enum CommentStatus {
-        ACTIVE, EDITED, DELETED
+        ACTIVE, EDITED, DELETED, HIDDEN
     }
 }
