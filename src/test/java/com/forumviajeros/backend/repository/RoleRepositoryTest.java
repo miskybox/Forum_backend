@@ -28,29 +28,33 @@ import com.forumviajeros.backend.model.Role;
 })
 class RoleRepositoryTest {
 
+    private static final String ROLE_USER = "ROLE_USER";
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+    private static final String ROLE_MODERATOR = "ROLE_MODERATOR";
+
     @Autowired
     private RoleRepository roleRepository;
 
     @BeforeEach
     void setUp() {
         // Crear roles principales si no existen
-        if (roleRepository.findByName("ROLE_USER").isEmpty()) {
+        if (roleRepository.findByName(ROLE_USER).isEmpty()) {
             Role roleUser = new Role();
-            roleUser.setName("ROLE_USER");
-            roleUser.setDescription("Usuario estándar");
+            roleUser.setName(ROLE_USER);
+            roleUser.setDescription("Usuario estandar");
             roleRepository.save(roleUser);
         }
 
-        if (roleRepository.findByName("ROLE_MODERATOR").isEmpty()) {
+        if (roleRepository.findByName(ROLE_MODERATOR).isEmpty()) {
             Role roleModerator = new Role();
-            roleModerator.setName("ROLE_MODERATOR");
+            roleModerator.setName(ROLE_MODERATOR);
             roleModerator.setDescription("Moderador del foro");
             roleRepository.save(roleModerator);
         }
 
-        if (roleRepository.findByName("ROLE_ADMIN").isEmpty()) {
+        if (roleRepository.findByName(ROLE_ADMIN).isEmpty()) {
             Role roleAdmin = new Role();
-            roleAdmin.setName("ROLE_ADMIN");
+            roleAdmin.setName(ROLE_ADMIN);
             roleAdmin.setDescription("Administrador del sistema");
             roleRepository.save(roleAdmin);
         }
@@ -58,28 +62,29 @@ class RoleRepositoryTest {
         roleRepository.flush();
     }
 
+
     @Test
     @DisplayName("Debe encontrar ROLE_USER")
     void shouldFindRoleUser() {
-        Optional<Role> role = roleRepository.findByName("ROLE_USER");
+        Optional<Role> role = roleRepository.findByName(ROLE_USER);
         assertTrue(role.isPresent(), "ROLE_USER debe existir");
-        assertEquals("ROLE_USER", role.get().getName());
+        assertEquals(ROLE_USER, role.get().getName());
     }
 
     @Test
     @DisplayName("Debe encontrar ROLE_MODERATOR")
     void shouldFindRoleModerator() {
-        Optional<Role> role = roleRepository.findByName("ROLE_MODERATOR");
+        Optional<Role> role = roleRepository.findByName(ROLE_MODERATOR);
         assertTrue(role.isPresent(), "ROLE_MODERATOR debe existir");
-        assertEquals("ROLE_MODERATOR", role.get().getName());
+        assertEquals(ROLE_MODERATOR, role.get().getName());
     }
 
     @Test
     @DisplayName("Debe encontrar ROLE_ADMIN")
     void shouldFindRoleAdmin() {
-        Optional<Role> role = roleRepository.findByName("ROLE_ADMIN");
+        Optional<Role> role = roleRepository.findByName(ROLE_ADMIN);
         assertTrue(role.isPresent(), "ROLE_ADMIN debe existir");
-        assertEquals("ROLE_ADMIN", role.get().getName());
+        assertEquals(ROLE_ADMIN, role.get().getName());
     }
 
     @Test
@@ -142,11 +147,11 @@ class RoleRepositoryTest {
     @Test
     @DisplayName("Debe verificar que existen los tres roles principales")
     void shouldHaveMainRoles() {
-        assertTrue(roleRepository.findByName("ROLE_USER").isPresent(), 
+        assertTrue(roleRepository.findByName(ROLE_USER).isPresent(),
                 "ROLE_USER debe existir");
-        assertTrue(roleRepository.findByName("ROLE_MODERATOR").isPresent(), 
+        assertTrue(roleRepository.findByName(ROLE_MODERATOR).isPresent(),
                 "ROLE_MODERATOR debe existir");
-        assertTrue(roleRepository.findByName("ROLE_ADMIN").isPresent(), 
+        assertTrue(roleRepository.findByName(ROLE_ADMIN).isPresent(),
                 "ROLE_ADMIN debe existir");
     }
 }

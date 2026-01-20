@@ -151,7 +151,7 @@ public class PostController {
         String username = authentication.getName();
         log.info("Usuario {} subiendo {} imagen(es) al post con id: {}", username, files.size(), id);
         try {
-            if (files == null || files.isEmpty()) {
+            if (files.isEmpty()) {
                 throw new IllegalArgumentException("Debe proporcionar al menos un archivo");
             }
             PostResponseDTO updatedPost = postService.addImages(id, files, authentication);
