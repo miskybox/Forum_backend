@@ -115,10 +115,10 @@ public class AuthServiceImpl implements AuthService {
 
         logger.debug("Authentication successful for user: {}", foundUser.getUsername());
 
-        String accessToken = refreshTokenService.generateAccessToken(user.getUsername());
-        String refreshToken = refreshTokenService.generateRefreshToken(user.getUsername());
+        String accessToken = refreshTokenService.generateAccessToken(foundUser.getUsername());
+        String refreshToken = refreshTokenService.generateRefreshToken(foundUser.getUsername());
 
-        logger.debug("Tokens generados para usuario: '{}'", user.getUsername());
+        logger.debug("Tokens generados para usuario: '{}'", foundUser.getUsername());
 
         return AuthResponseDTO.builder()
                 .accessToken(accessToken)
