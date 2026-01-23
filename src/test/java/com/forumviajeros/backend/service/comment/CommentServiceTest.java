@@ -34,6 +34,7 @@ import com.forumviajeros.backend.model.User;
 import com.forumviajeros.backend.repository.CommentRepository;
 import com.forumviajeros.backend.repository.PostRepository;
 import com.forumviajeros.backend.repository.UserRepository;
+import com.forumviajeros.backend.service.NotificationService;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CommentService Tests")
@@ -47,6 +48,9 @@ class CommentServiceTest {
 
     @Mock
     private PostRepository postRepository;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private CommentServiceImpl commentService;
