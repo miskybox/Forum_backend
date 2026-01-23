@@ -30,4 +30,10 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Query("SELECT p FROM Post p JOIN p.tags t WHERE t.name = :tagName")
     Page<Post> findByTagName(@Param("tagName") String tagName, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.user.id IN :userIds ORDER BY p.createdAt DESC")
+    Page<Post> findByUserIdIn(@Param("userIds") List<Long> userIds, Pageable pageable);
+
+    @Query("SELECT p FROM Post p WHERE p.user.id IN :userIds AND p.status = :status ORDER BY p.createdAt DESC")
+    Page<Post> findByUserIdInAndStatus(@Param("userIds") List<Long> userIds, @Param("status") Post.PostStatus status, Pageable pageable);
 }
