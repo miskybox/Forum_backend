@@ -65,7 +65,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
             return authenticationManager.authenticate(authToken);
         } catch (IOException e) {
-            throw new RuntimeException("Error leyendo credenciales: " + e.getMessage(), e);
+            // Security: Don't expose internal error details
+            throw new RuntimeException("Authentication request processing failed", e);
         }
     }
 
@@ -99,10 +100,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         
+        // Security: Use generic error message, don't expose specific auth failure reasons
         Map<String, String> errorMap = new HashMap<>();
         errorMap.put("message", "Credenciales inválidas");
-        errorMap.put("error", failed.getMessage());
-        
+        errorMap.put("error", "Authentication failed");
+
         response.getWriter().write(objectMapper.writeValueAsString(errorMap));
         response.getWriter().flush();
     }
