@@ -89,8 +89,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception exception,
             WebRequest webRequest) {
-        // Log the actual exception for debugging (add logger if needed)
-        // logger.error("Internal server error", exception);
+        // Log the actual exception for debugging
+        System.err.println("=== INTERNAL SERVER ERROR ===");
+        System.err.println("Exception: " + exception.getClass().getName());
+        System.err.println("Message: " + exception.getMessage());
+        exception.printStackTrace();
+        System.err.println("=============================");
 
         // Generic message to avoid exposing internal details
         ErrorDetails errorDetails = new ErrorDetails(
