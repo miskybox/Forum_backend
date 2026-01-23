@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -17,6 +19,8 @@ import org.springframework.web.context.request.WebRequest;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // Maneja ResourceNotFoundException (404 Not Found)
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -89,12 +93,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> handleGlobalException(Exception exception,
             WebRequest webRequest) {
-        // Log the actual exception for debugging
-        System.err.println("=== INTERNAL SERVER ERROR ===");
-        System.err.println("Exception: " + exception.getClass().getName());
-        System.err.println("Message: " + exception.getMessage());
-        exception.printStackTrace();
-        System.err.println("=============================");
+        // Log the actual exception using proper logging framework
+        logger.error("Internal server error - {}: {}",
+                exception.getClass().getSimpleName(),
+                exception.getMessage(),
+                exception);
 
         // Generic message to avoid exposing internal details
         ErrorDetails errorDetails = new ErrorDetails(

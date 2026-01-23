@@ -90,7 +90,37 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public Path load(String filename) {
-        return rootLocation.resolve(filename);
+        // Security: Validate filename to prevent path traversal attacks
+        validateFilename(filename);
+        Path resolvedPath = rootLocation.resolve(filename).normalize();
+
+        // Ensure the resolved path is still within the root location
+        if (!resolvedPath.startsWith(rootLocation)) {
+            throw new StorageException("Cannot access file outside of storage directory");
+        }
+
+        return resolvedPath;
+    }
+
+    /**
+     * Security: Validates filename to prevent path traversal attacks
+     * Only allows alphanumeric characters, hyphens, underscores, and dots
+     * Must match UUID pattern followed by extension
+     */
+    private void validateFilename(String filename) {
+        if (filename == null || filename.isEmpty()) {
+            throw new StorageException("Filename cannot be empty");
+        }
+
+        // Check for path traversal attempts
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            throw new StorageException("Invalid filename: path traversal not allowed");
+        }
+
+        // Validate filename format (UUID + extension)
+        if (!filename.matches("^[a-fA-F0-9\\-]+\\.(jpg|jpeg|png|webp)$")) {
+            throw new StorageException("Invalid filename format");
+        }
     }
 
     @Override

@@ -106,14 +106,14 @@ public class AuthServiceImpl implements AuthService {
 
         User foundUser = optionalUser.get();
         boolean passwordMatches = passwordEncoder.matches(dto.getPassword(), foundUser.getPassword());
-        logger.info("Usuario encontrado: {}, Password match: {}", foundUser.getUsername(), passwordMatches);
 
         if (!passwordMatches) {
-            logger.warn("Contraseña incorrecta para usuario: {}", dto.getUsername());
+            // Security: Use generic log message without revealing password validation details
+            logger.debug("Authentication failed for user: {}", dto.getUsername());
             throw new BadCredentialsException("Credenciales inválidas");
         }
 
-        User user = optionalUser.get();
+        logger.debug("Authentication successful for user: {}", foundUser.getUsername());
 
         String accessToken = refreshTokenService.generateAccessToken(user.getUsername());
         String refreshToken = refreshTokenService.generateRefreshToken(user.getUsername());

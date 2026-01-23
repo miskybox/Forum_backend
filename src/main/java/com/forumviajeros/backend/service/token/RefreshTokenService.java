@@ -20,7 +20,8 @@ import jakarta.servlet.http.HttpServletRequest;
 @Service
 public class RefreshTokenService {
 
-    private static final long REFRESH_TOKEN_EXPIRATION = 30L * 24 * 60 * 60 * 1000;
+    // Security: Reduced from 30 days to 14 days for better security
+    private static final long REFRESH_TOKEN_EXPIRATION = 14L * 24 * 60 * 60 * 1000;
 
     private final RefreshTokenRepository refreshTokenRepository;
 
