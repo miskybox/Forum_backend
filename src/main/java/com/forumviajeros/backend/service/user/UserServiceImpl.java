@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -99,6 +101,18 @@ public class UserServiceImpl implements UserService {
         return userRepository.findAll().stream()
                 .map(this::mapToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<UserResponseDTO> getAllUsersPaged(Pageable pageable) {
+        return userRepository.findByStatus(UserStatus.ACTIVE, pageable)
+                .map(this::mapToResponseDTO);
+    }
+
+    @Override
+    public Page<UserResponseDTO> searchUsers(String query, Pageable pageable) {
+        return userRepository.findByUsernameContainingIgnoreCaseAndStatus(query, UserStatus.ACTIVE, pageable)
+                .map(this::mapToResponseDTO);
     }
 
     @Override

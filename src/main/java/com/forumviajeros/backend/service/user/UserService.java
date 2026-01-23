@@ -3,6 +3,8 @@ package com.forumviajeros.backend.service.user;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 
 import com.forumviajeros.backend.dto.user.UserRequestDTO;
@@ -22,6 +24,10 @@ public interface UserService {
     UserResponseDTO getUser(Long id);
 
     List<UserResponseDTO> getAllUsers();
+
+    Page<UserResponseDTO> getAllUsersPaged(Pageable pageable);
+
+    Page<UserResponseDTO> searchUsers(String query, Pageable pageable);
 
     void deleteUser(Long id);
 

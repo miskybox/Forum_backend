@@ -17,6 +17,7 @@ import com.forumviajeros.backend.model.User;
 import com.forumviajeros.backend.repository.CommentRepository;
 import com.forumviajeros.backend.repository.PostRepository;
 import com.forumviajeros.backend.repository.UserRepository;
+import com.forumviajeros.backend.service.NotificationService;
 import com.forumviajeros.backend.util.HtmlSanitizer;
 
 @Service
@@ -25,13 +26,16 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     public CommentServiceImpl(CommentRepository commentRepository,
             UserRepository userRepository,
-            PostRepository postRepository) {
+            PostRepository postRepository,
+            NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.postRepository = postRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -49,6 +53,8 @@ public class CommentServiceImpl implements CommentService {
         comment.setStatus(Comment.CommentStatus.ACTIVE);
 
         Comment savedComment = commentRepository.save(comment);
+        // Generar notificación de comentario
+        notificationService.createCommentNotification(user, postId);
         return mapToResponseDTO(savedComment);
     }
 

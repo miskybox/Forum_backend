@@ -3,6 +3,9 @@ package com.forumviajeros.backend.controller;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -41,10 +44,33 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Obtener todos los usuarios", description = "Devuelve un listado de todos los usuarios registrados")
+    @Operation(summary = "Obtener todos los usuarios", description = "Devuelve un listado paginado de usuarios activos")
     @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida con éxito")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+    public ResponseEntity<Page<UserResponseDTO>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserResponseDTO> users = userService.getAllUsersPaged(pageable);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Buscar usuarios", description = "Busca usuarios por nombre de usuario")
+    @ApiResponse(responseCode = "200", description = "Resultados de busqueda obtenidos")
+    public ResponseEntity<Page<UserResponseDTO>> searchUsers(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<UserResponseDTO> users = userService.searchUsers(q, pageable);
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Obtener todos los usuarios (Admin)", description = "Devuelve un listado completo de todos los usuarios")
+    @ApiResponse(responseCode = "200", description = "Lista de usuarios obtenida con éxito")
+    public ResponseEntity<List<UserResponseDTO>> getAllUsersAdmin() {
         List<UserResponseDTO> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
