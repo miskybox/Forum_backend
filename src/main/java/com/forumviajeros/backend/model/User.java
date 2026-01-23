@@ -64,6 +64,7 @@ public class User {
     private String profileImageUrl;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
 
@@ -99,4 +100,13 @@ public class User {
     public enum UserStatus {
         ACTIVE, INACTIVE, BANNED, DELETED
     }
+
+        // Métodos para compatibilidad con servicios
+        public String getAvatarUrl() {
+            return this.profileImageUrl;
+        }
+
+        public String getBio() {
+            return this.biography;
+        }
 }

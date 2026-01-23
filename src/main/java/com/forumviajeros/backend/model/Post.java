@@ -86,4 +86,12 @@ public class Post {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+        // Devuelve la URL de la primera imagen asociada, si existe
+        public String getImageUrl() {
+            if (images != null && !images.isEmpty()) {
+                return images.get(0).getFilePath();
+            }
+            return null;
+        }
 }
