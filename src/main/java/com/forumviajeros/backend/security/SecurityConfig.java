@@ -49,6 +49,7 @@ public class SecurityConfig {
                                 .headers(headers -> headers
                                                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
                                                 .frameOptions(frame -> frame.deny())
+                                                .contentTypeOptions(contentType -> {}) // X-Content-Type-Options: nosniff
                                                 .httpStrictTransportSecurity(hsts -> hsts
                                                                 .maxAgeInSeconds(31536000)))
                                 .sessionManagement(session -> session
